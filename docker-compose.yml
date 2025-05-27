@@ -1,0 +1,19 @@
+services:
+  app:
+    container_name: oan_app
+    build: .
+    ports:
+      - "8000:8000"
+    expose:
+      - "8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env  
+    restart: unless-stopped
+    networks:
+      - oannetwork
+      
+networks:
+  oannetwork:
+    external: true
