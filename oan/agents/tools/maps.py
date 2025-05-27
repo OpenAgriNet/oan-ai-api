@@ -2,7 +2,6 @@ import os
 import requests
 from dotenv import load_dotenv
 from mapbox import Geocoder
-from cachecontrol.caches.file_cache import FileCache
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 from helpers.utils import get_logger
@@ -11,10 +10,7 @@ logger = get_logger(__name__)
 
 load_dotenv()
 
-# Create a cached session
-mapbox_cache = FileCache('.mapbox_cache')
-
-geocoder = Geocoder(access_token=os.getenv("MAPBOX_API_TOKEN"), cache=mapbox_cache)
+geocoder = Geocoder(access_token=os.getenv("MAPBOX_API_TOKEN"))
 
 class Location(BaseModel):
     """Location model for the maps tool."""
@@ -64,49 +60,14 @@ def forward_geocode(place_name: str) -> Optional[Location]:
     Returns:
         Location: The location of the place.
     """
-    # Bounding box for Maharashtra [min_lon, min_lat, max_lon, max_lat]
-    # Coordinates from Wikipedia: 15°35'N to 22°02'N and 72°36'E to 80°54'E
-    maharashtra_bbox = [72.6, 15.583333, 80.9, 22.033333]
-
     response = geocoder.forward(place_name, 
                                 country=["in"],
-                                bbox=maharashtra_bbox,
                                 limit=1)
     if response.status_code == 200:
         data = response.json()
         if data['features']:
             feature = data['features'][0]
             longitude, latitude = feature['center']
-            return Location(
-                place_name=feature['place_name'],
-                latitude=latitude,
-                longitude=longitude
-            )
-        else:
-            logger.info("No results found.")
-    else:
-        logger.info(f"Error: {response.status_code}")
-    return None
-
-
-def reverse_geocode(latitude: float, longitude: float) -> Optional[Location]:
-    """Reverse Geocoding to get place name from latitude and longitude.
-
-    Args:
-        latitude (float): The latitude of the location.
-        longitude (float): The longitude of the location.
-
-    Returns:
-        Location: The location of the place.
-    """
-    response = geocoder.reverse(lon=longitude, lat=latitude, 
-                                limit=1, 
-                                types=['place']
-                                )
-    if response.status_code == 200:
-        data = response.json()
-        if data['features']:
-            feature = data['features'][0]
             return Location(
                 place_name=feature['place_name'],
                 latitude=latitude,
