@@ -2,10 +2,18 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.DS_Store
+.DS_Store
+
+*.mapbox_cache
+# Google Cloud
+*credentials.json
+*jwt_public_key.pem
 
 # C extensions
 *.so
-
+*.DS_Store
+.DS_Store
 # Distribution / packaging
 .Python
 build/
@@ -51,9 +59,6 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Translations
-*.mo
-*.pot
 
 # Django stuff:
 *.log
@@ -135,6 +140,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+sunenv/
 
 # Spyder project settings
 .spyderproject
@@ -172,3 +178,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+.DS_Store
+.DS_Store

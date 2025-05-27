@@ -1,0 +1,75 @@
+## basic setup packages
+wheel
+setuptools
+python-dotenv
+httpx_oauth
+Jinja2>=3.1.0  # For template rendering
+# for data/DB
+pandas
+simplejson
+### for DB
+nest-asyncio
+pg8000
+sqlalchemy
+psycopg2
+psycopg[pool]   # for connection pooling
+
+requests
+
+# LLM
+openai
+pydantic==2.11.4
+tiktoken
+tenacity
+
+# Logfire
+logfire
+# gevent>=20.6.2
+eventlet>=0.25.2
+celery==5.2.3
+flower==2.0.1
+kombu==5.4.0
+
+# Redis for caching and stuff
+redis
+django-redis==5.4.0
+
+### Django
+django==5.1.1
+## JWT for Django
+djangorestframework-simplejwt
+PyJWT
+cryptography
+
+# Settings
+python-decouple
+django-environ
+
+# Rate limiting. [Optional]
+django-ratelimit
+
+openpyxl
+
+### Pydantic AI 
+pydantic-ai==0.2.3
+asgiref
+
+
+gunicorn
+uvicorn
+httpx
+marqo==3.11.0
+
+# Tenacity
+tenacity
+langcodes
+
+django-cors-headers
+
+# AWS
+boto3
+
+# Mapbox Geocoding
+mapbox
+
+rapidfuzz
