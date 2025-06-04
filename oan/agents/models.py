@@ -35,16 +35,4 @@ elif LLM_PROVIDER == 'openai':
         ),
     )
 else:
-    raise ValueError(f"Invalid LLM_PROVIDER: {LLM_PROVIDER}. Must be one of: 'gemini', 'qwen', 'openai'")
-
-
-
-# LLM_MODEL = OpenAIModel(
-#     #"Qwen/Qwen2.5-72B-Instruct",
-# #    "meta-llama/Llama-4-Scout-17B-16E-Instruct",
-#     "Qwen/Qwen3-30B-A3B",
-#     provider=OpenAIProvider(
-#         base_url=os.getenv('INFERENCE_ENDPOINT_URL'), 
-#         api_key=os.getenv('INFERENCE_API_KEY'),  
-#     ),
-# )
+    raise ValueError(f"Invalid LLM_PROVIDER: {LLM_PROVIDER}. Must be one of: 'gemini', 'openai', 'vllm'")

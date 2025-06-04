@@ -1,46 +1,19 @@
-import simplejson as json
-from typing import List, Set, Dict, Tuple, Iterable
+from typing import List
 from django.core.cache import cache
-from helpers.utils import get_logger, count_tokens_str, count_tokens_for_part
+from helpers.utils import get_logger, count_tokens_for_part
 from copy import deepcopy
 from pydantic_ai.messages import (
     ModelMessagesTypeAdapter,
     ModelMessage,
     SystemPromptPart,
-    TextPart,
-    ToolCallPart
 )
 from pydantic_core import to_jsonable_python
-from helpers.translation import BhashiniTranslator, markdown_to_chunks, chunks_to_markdown
-from helpers.utils import split_text, post_process_translation
 
 HISTORY_SUFFIX = "_oan"
 
 DEFAULT_CACHE_TTL = 60*60*24 # 24 hours
 
 logger = get_logger(__name__)
-
-terms = json.load(open('assets/word_mapping_reduced_1000.json'))
-
-def _translate_text(text: str, source_lang: str, target_lang: str) -> str:
-    """Translate text to the target language."""
-    if target_lang == source_lang:
-        return text
-    else:
-        if text.strip() == '':
-            return text
-        # Initialize the translator
-        translator = BhashiniTranslator(source_lang=source_lang, target_lang=target_lang, batch_size=8, term_pairs=terms)
-        # Split the text into sentences
-        sentences = split_text(text)
-        # Translate each sentence
-        chunks    = [markdown_to_chunks(s) for s in sentences]
-        # Flatten the chunks
-        flattened_chunks = [item for sublist in chunks for item in sublist]
-        # Translate the chunks
-        translated_chunks = translator.translate(flattened_chunks, exclude_keys=['start', 'end'], use_term_pairs=True)
-        translated_text = chunks_to_markdown(translated_chunks)
-        return post_process_translation(translated_text)
 
 
 

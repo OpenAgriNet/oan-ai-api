@@ -7,7 +7,6 @@ load_dotenv()
 from cryptography.hazmat.primitives import serialization
 from rest_framework.authentication import BaseAuthentication
 from rest_framework import exceptions
-from django.conf import settings
 from helpers.utils import get_logger
 
 logger = get_logger(__name__)

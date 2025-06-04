@@ -1,8 +1,7 @@
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from langcodes import Language
-from agents.tools.maps import Location
-from agents.tools.common import Plan
+
 
 class FarmerContext(BaseModel):
     """Context for the farmer agent."""
