@@ -7,7 +7,6 @@ import marqo
 from typing import List, Optional, Literal, Dict
 from pydantic import BaseModel, Field
 from helpers.utils import get_logger
-from helpers.translation import add_marathi_terms
 
 
 logger = get_logger(__name__)

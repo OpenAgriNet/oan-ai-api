@@ -3,11 +3,8 @@ import base64
 import requests
 import json
 from dotenv import load_dotenv
-# from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed
-from typing import Dict
-from langcodes import Language
-from openai import OpenAI
 from io import BytesIO
+
 load_dotenv()
 
 def base64_to_audio_file(base64_string: str, filename: str = "audio.wav") -> BytesIO:

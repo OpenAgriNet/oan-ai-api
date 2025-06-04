@@ -4,8 +4,7 @@ from helpers.utils import get_logger
 import requests
 from pydantic import BaseModel, AnyHttpUrl, Field
 from typing import List, Optional, Dict, Any
-from pydantic_ai import ModelRetry, UnexpectedModelBehavior, RunContext
-from agents.deps import FarmerContext
+from pydantic_ai import ModelRetry, UnexpectedModelBehavior
 
 logger = get_logger(__name__)
 

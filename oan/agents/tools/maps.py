@@ -3,7 +3,7 @@ import requests
 from dotenv import load_dotenv
 from mapbox import Geocoder
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 from helpers.utils import get_logger
 
 logger = get_logger(__name__)
