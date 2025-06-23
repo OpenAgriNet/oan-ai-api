@@ -1,5 +1,5 @@
 from typing import List
-from django.core.cache import cache
+from app.core.cache import cache
 from helpers.utils import get_logger, count_tokens_for_part
 from copy import deepcopy
 from pydantic_ai.messages import (
@@ -15,11 +15,39 @@ DEFAULT_CACHE_TTL = 60*60*24 # 24 hours
 
 logger = get_logger(__name__)
 
+async def get_cache(key: str, default=None):
+    """
+    Get value from cache.
+    
+    Args:
+        key: Cache key to retrieve
+        default: Default value if key not found
+        
+    Returns:
+        Cached value or default if not found
+    """
+    result = await cache.get(key)
+    return result if result is not None else default
 
 
-def _get_message_history(session_id: str) -> List[ModelMessage]:
+async def set_cache(key: str, value, ttl: int = DEFAULT_CACHE_TTL):
+    """
+    Set value in cache with TTL.
+    
+    Args:
+        key: Cache key to store under
+        value: Value to cache (will be JSON serialized)
+        ttl: Time to live in seconds (default: 24 hours)
+        
+    Returns:
+        True if successful
+    """
+    await cache.set(key, value, ttl=ttl)
+    return True
+
+async def _get_message_history(session_id: str) -> List[ModelMessage]:
     """Get or initialize message history."""
-    message_history = cache.get(f"{session_id}_{HISTORY_SUFFIX}", [])
+    message_history = await cache.get(f"{session_id}_{HISTORY_SUFFIX}")
     if message_history:
         return ModelMessagesTypeAdapter.validate_python(message_history)
     return []
@@ -31,9 +59,9 @@ def _get_moderation_history(session_id: str) -> List[ModelMessage]:
         return ModelMessagesTypeAdapter.validate_python(moderation_history)
     return []
 
-def update_message_history(session_id: str, all_messages: List[ModelMessage]):
+async def update_message_history(session_id: str, all_messages: List[ModelMessage]):
     """Update message history."""
-    cache.set(f"{session_id}_{HISTORY_SUFFIX}", to_jsonable_python(all_messages), timeout=DEFAULT_CACHE_TTL)
+    await cache.set(f"{session_id}_{HISTORY_SUFFIX}", to_jsonable_python(all_messages), ttl=DEFAULT_CACHE_TTL)
 
 def update_moderation_history(session_id: str, moderation_messages: List[ModelMessage]):
     """Update moderation history."""

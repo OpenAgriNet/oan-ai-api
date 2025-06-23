@@ -1,15 +1,18 @@
-## basic setup packages
-wheel
-setuptools
+# FastAPI and Web Framework
+fastapi
+uvicorn[standard]
+gunicorn
+
+# Core Dependencies
 python-dotenv
-httpx_oauth
-Jinja2>=3.1.0  # For template rendering
-# for data/DB
+requests
+httpx
+
+# Data Handling
 pandas
 simplejson
-### for DB
-nest-asyncio
-pg8000
+
+# Database (if needed for future use)
 sqlalchemy
 psycopg2
 psycopg[pool]   # for connection pooling
@@ -30,24 +33,18 @@ celery==5.2.3
 flower==2.0.1
 kombu==5.4.0
 
-# Redis for caching and stuff
+# Caching
 redis
-django-redis==5.4.0
+aiocache
 
-### Django
-django==5.1.1
-## JWT for Django
-djangorestframework-simplejwt
+# Authentication (FastAPI compatible)
 PyJWT
 cryptography
 
-# Settings
-python-decouple
-django-environ
+# Language and Localization
+langcodes
 
-# Rate limiting. [Optional]
-django-ratelimit
-
+# File Processing
 openpyxl
 
 ### Pydantic AI 
@@ -64,8 +61,6 @@ marqo==3.11.0
 tenacity
 langcodes
 
-django-cors-headers
-
 # AWS
 boto3
 
@@ -73,3 +68,5 @@ boto3
 mapbox
 
 rapidfuzz
+fastapi
+aiocache
