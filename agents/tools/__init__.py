@@ -8,6 +8,7 @@ from agents.tools.warehouse import warehouse_data
 from agents.tools.maps import forward_geocode  
 from pydantic_ai import Tool
 from agents.tools.terms import search_terms
+from agents.tools.scheme import get_scheme_info
 
 TOOLS = [
     Tool(
@@ -32,6 +33,10 @@ TOOLS = [
     ),
     Tool(
         forward_geocode,
+        takes_ctx=False,
+    ),
+    Tool(
+        get_scheme_info,
         takes_ctx=False,
     ),
 ]
