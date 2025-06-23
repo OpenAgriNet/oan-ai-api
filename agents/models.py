@@ -4,12 +4,18 @@ from pydantic_ai.models.gemini import GeminiModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.providers.google_gla import GoogleGLAProvider
 from dotenv import load_dotenv
+from helpers.utils import get_logger
 
 load_dotenv()
+logger = get_logger(__name__)
 
 # Get configurations from environment variables
 LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'gemini').lower()
 LLM_MODEL_NAME = os.getenv('LLM_MODEL_NAME', 'gemini-2.0-flash')
+
+# Debug logging
+logger.info(f"LLM_PROVIDER loaded: '{LLM_PROVIDER}'")
+logger.info(f"LLM_MODEL_NAME loaded: '{LLM_MODEL_NAME}'")
 
 # Configure the model based on provider
 if LLM_PROVIDER == 'gemini':

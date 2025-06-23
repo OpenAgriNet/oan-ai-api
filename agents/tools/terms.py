@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
 
 # Load term pairs from JSON file
-term_pairs = json.load(open('assets/word_mapping_v3.json'))
+with open('assets/word_mapping_v3.json', 'r', encoding='utf-8') as f:
+    term_pairs = json.load(f)
 
 class Language(str, Enum):
     ENGLISH = "en"
