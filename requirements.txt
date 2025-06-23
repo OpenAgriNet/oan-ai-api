@@ -65,7 +65,7 @@ langcodes
 boto3
 
 # Mapbox Geocoding
-mapbox
+geopy
 
 rapidfuzz
 fastapi

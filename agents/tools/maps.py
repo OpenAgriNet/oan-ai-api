@@ -1,16 +1,22 @@
 import os
-import requests
 from dotenv import load_dotenv
-from mapbox import Geocoder
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 from typing import Optional
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from helpers.utils import get_logger
 
 logger = get_logger(__name__)
 
 load_dotenv()
 
-geocoder = Geocoder(access_token=os.getenv("MAPBOX_API_TOKEN"))
+# Initialize Nominatim geocoder (self-hosted)
+geocoder = Nominatim(
+    user_agent="bharathvistaar", 
+    domain="nominatim:8080",
+    scheme="http",
+    timeout=10
+)
 
 class Location(BaseModel):
     """Location model for the maps tool."""
@@ -31,15 +37,14 @@ class Location(BaseModel):
         self.check_place_name()
     
     def check_place_name(self) -> None:
-        """Check if place_name is provided."""
+        """If coordinates are provided but not place name, do reverse geocoding."""
         if self.latitude is not None and self.longitude is not None and self.place_name is None:
-            response = geocoder.reverse(lon=self.longitude, lat=self.latitude, 
-                                     limit=1, 
-                                     types=['place'])
-            if response.status_code == 200:
-                data = response.json()
-                if data['features']:
-                    self.place_name = data['features'][0]['place_name']
+            try:
+                location = geocoder.reverse((self.latitude, self.longitude), exactly_one=True)
+                if location:
+                    self.place_name = location.raw['display_name']
+            except (GeocoderTimedOut, GeocoderServiceError) as e:
+                logger.error(f"Reverse geocoding error: {e}")
 
     def _location_string(self):
         if self.latitude and self.longitude:
@@ -52,29 +57,35 @@ class Location(BaseModel):
 
 
 def forward_geocode(place_name: str) -> Optional[Location]:
-    """Forward Geocoding to get latitude and longitude from place name.
+    """Forward geocoding using Nominatim."""
+    try:
+        response = geocoder.geocode(place_name, exactly_one=True, addressdetails=True, country_codes='in')
 
-    Args:
-        place_name (str): The place name to geocode, in English.
-
-    Returns:
-        Location: The location of the place.
-    """
-    response = geocoder.forward(place_name, 
-                                country=["in"],
-                                limit=1)
-    if response.status_code == 200:
-        data = response.json()
-        if data['features']:
-            feature = data['features'][0]
-            longitude, latitude = feature['center']
+        if response:
             return Location(
-                place_name=feature['place_name'],
+                place_name=response.raw['display_name'],
+                latitude=response.latitude,
+                longitude=response.longitude
+            )
+        else:
+            logger.info("No results found.")
+    except (GeocoderTimedOut, GeocoderServiceError) as e:
+        logger.error(f"Forward geocoding error: {e}")
+    return None
+
+
+def reverse_geocode(latitude: float, longitude: float) -> Optional[Location]:
+    """Reverse geocoding using Nominatim."""
+    try:
+        location = geocoder.reverse((latitude, longitude), exactly_one=True)
+        if location:
+            return Location(
+                place_name=location.raw['display_name'],
                 latitude=latitude,
                 longitude=longitude
             )
         else:
             logger.info("No results found.")
-    else:
-        logger.info(f"Error: {response.status_code}")
+    except (GeocoderTimedOut, GeocoderServiceError) as e:
+        logger.error(f"Reverse geocoding error: {e}")
     return None

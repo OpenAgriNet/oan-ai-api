@@ -7,6 +7,7 @@ from typing import List, Optional, Dict, Any, Tuple
 from dateutil import parser
 from dateutil.parser import ParserError
 from pydantic_ai import ModelRetry, UnexpectedModelBehavior
+import os
 
 logger = get_logger(__name__)
 
@@ -382,8 +383,8 @@ class WeatherRequest(BaseModel):
                 "transaction_id": str(uuid.uuid4()),
                 "domain": "advisory:weather:mh-vistaar",
                 "version": "1.1.0",
-                "bap_id": "prodseekernetwork.mahapocra.gov.in",
-                "bap_uri": "https://prodseekernetwork.mahapocra.gov.in",
+                "bap_id": os.getenv("BAP_ID"),
+                "bap_uri": os.getenv("BAP_URI"),
                 "location": {
                     "country": {"name": "India", "code": "IND"},
                 }
@@ -424,7 +425,7 @@ def weather_forecast(latitude: float, longitude: float) -> str:
     """    
     try:        
         payload  = WeatherRequest(latitude=latitude, longitude=longitude).get_payload()
-        response = requests.post("https://prodseekerclient.mahapocra.gov.in/search",
+        response = requests.post(os.getenv("BAP_ENDPOINT"),
                                  json=payload,
                                  timeout=(10,15))
         
