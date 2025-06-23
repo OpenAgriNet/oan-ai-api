@@ -5,6 +5,7 @@ import requests
 from pydantic import BaseModel, AnyHttpUrl, Field
 from typing import List, Optional, Dict, Any
 from pydantic_ai import ModelRetry, UnexpectedModelBehavior
+import os
 
 logger = get_logger(__name__)
 
@@ -199,8 +200,8 @@ class MandiRequest(BaseModel):
                     }
                 },
                 "version": "1.1.0",
-                "bap_id": "prodseekernetwork.mahapocra.gov.in",
-                "bap_uri": "https://prodseekernetwork.mahapocra.gov.in",
+                "bap_id": os.getenv("BAP_ID"),
+                "bap_uri": os.getenv("BAP_URI"),
                 "message_id": str(uuid.uuid4()),
                 "transaction_id": str(uuid.uuid4()),
                 "timestamp": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
@@ -247,7 +248,7 @@ def mandi_prices(latitude: float, longitude: float, days_back: int = 0) -> str:
     try:
         payload = MandiRequest(latitude=latitude, longitude=longitude, days_back=days_back).get_payload()
         response = requests.post(
-            "https://prodseekerclient.mahapocra.gov.in/search",
+            os.getenv("BAP_ENDPOINT"),
             json=payload,
             timeout=(10, 15)
         )

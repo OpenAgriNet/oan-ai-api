@@ -50,6 +50,20 @@ docker run -d --name redis-stack --network oannetwork \
     -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
 ```
 
+### Nominatim Setup
+
+Quick setup:
+
+For detailed setup instructions, system requirements, and troubleshooting, see [docs/nominatim.md](docs/nominatim.md).
+
+```bash
+# Add Nominatim to your docker-compose.yml and start it
+docker-compose up nominatim -d
+
+# Monitor the import progress (takes 30-60+ minutes)
+docker-compose logs -f nominatim
+```
+
 ### Marqo Setup
 
 Run Marqo search engine:
