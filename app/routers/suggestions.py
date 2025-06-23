@@ -3,18 +3,15 @@ from fastapi.responses import JSONResponse
 from app.utils import get_cache
 from app.tasks.suggestions import create_suggestions
 from helpers.utils import get_logger
-from pydantic import BaseModel, Field
+from app.models.requests import SuggestionsRequest
+from app.models.responses import SuggestionsResponse
 from typing import Optional
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/suggest", tags=["suggest"])
 
-class SuggestionsRequest(BaseModel):
-    session_id: str = Field(..., description="Chat session ID", min_length=1)
-    target_lang: str = Field(default="mr", description="Target language for suggestions")
-
-@router.post("/")
+@router.post("/", response_model=SuggestionsResponse)
 async def suggest(request: SuggestionsRequest, background_tasks: BackgroundTasks):
     """Get suggestions for a chat session. If not available, trigger generation."""
     
@@ -27,4 +24,8 @@ async def suggest(request: SuggestionsRequest, background_tasks: BackgroundTasks
         background_tasks.add_task(create_suggestions, request.session_id, request.target_lang)
         suggestions = []
     
-    return {"suggestions": suggestions}
+    return SuggestionsResponse(
+        status='success',
+        suggestions=suggestions,
+        session_id=request.session_id
+    )
