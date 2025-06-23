@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.routers import chat_router, suggestions_router, transcribe_router, tts_router
+from app.routers.health import router as health_router
 from app.core.cache import cache
 from helpers.utils import get_logger
 
@@ -71,33 +72,7 @@ def create_app() -> FastAPI:
     app.include_router(suggestions_router, prefix=settings.api_prefix)
     app.include_router(transcribe_router, prefix=settings.api_prefix)
     app.include_router(tts_router, prefix=settings.api_prefix)
-    
-    # Health check endpoint
-    @app.get("/health")
-    async def health_check():
-        """Health check endpoint"""
-        try:
-            # Test cache connectivity
-            await cache.set("health_test", "ok", ttl=10)
-            cache_status = await cache.get("health_test")
-            cache_healthy = cache_status == "ok"
-            
-            return JSONResponse({
-                "status": "healthy" if cache_healthy else "degraded",
-                "service": settings.app_name,
-                "version": "1.0.0",
-                "environment": settings.environment,
-                "cache": "connected" if cache_healthy else "disconnected"
-            })
-        except Exception as e:
-            logger.error(f"Health check failed: {str(e)}")
-            return JSONResponse({
-                "status": "unhealthy",
-                "service": settings.app_name,
-                "version": "1.0.0",
-                "environment": settings.environment,
-                "error": str(e)
-            }, status_code=503)
+    app.include_router(health_router, prefix=settings.api_prefix)
     
     return app
 

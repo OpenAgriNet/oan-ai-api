@@ -6,19 +6,12 @@ from helpers.utils import get_logger
 from app.utils import _get_message_history
 from app.tasks.suggestions import create_suggestions
 from app.services.chat import stream_chat_messages
-from pydantic import BaseModel, Field
+from app.models.requests import ChatRequest
 from typing import Optional
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
-
-class ChatRequest(BaseModel):
-    query: str = Field(..., description="User's question/message", min_length=1)
-    session_id: Optional[str] = Field(default=None, description="Chat session ID")
-    source_lang: str = Field(default="en", description="Source language code")
-    target_lang: str = Field(default="en", description="Target language code")
-    user_id: str = Field(default="anonymous", description="User identifier")
 
 @router.post("/")
 async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
@@ -58,8 +51,6 @@ async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
                 history=history
             ):
                 chunks_yielded += 1
-                if chunks_yielded == 1:
-                    logger.debug(f"First chunk yielded for session {session_id}")
                 yield chunk
             
             logger.info(f"Completed streaming response for session {session_id} - total chunks: {chunks_yielded}")
