@@ -35,14 +35,14 @@ services:
       - "8080:8080"
     restart: unless-stopped
     networks:
-      - svanetwork
+      - oannetwork
 
 volumes:
   nominatim-data:
     driver: local
 
 networks:
-  svanetwork:
+  oannetwork:
     driver: bridge
 ```
 
