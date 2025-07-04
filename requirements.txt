@@ -1,22 +1,17 @@
-# FastAPI and Web Framework
-fastapi
-uvicorn[standard]
-gunicorn
+## basic setup packages
+wheel
+setuptools
+python-dotenv==1.0.0
+httpx_oauth
+Jinja2>=3.1.0  # For template rendering
 
-# Core Dependencies
-python-dotenv
-requests
-httpx
-
-# Data Handling
+# for data/DB
 pandas
 simplejson
 
-# Database (if needed for future use)
+### for DB
+pg8000
 sqlalchemy
-psycopg2
-psycopg[pool]   # for connection pooling
-
 requests
 
 # LLM
@@ -27,46 +22,48 @@ tenacity
 
 # Logfire
 logfire
-# gevent>=20.6.2
-eventlet>=0.25.2
-celery==5.2.3
-flower==2.0.1
-kombu==5.4.0
+gevent>=22.10.0
 
-# Caching
+# Redis for caching and stuff
 redis
-aiocache
+# NOTE: not sure if needed
+# hiredis-py 
 
-# Authentication (FastAPI compatible)
+# Settings
+python-decouple
+
+openpyxl
+
+### Pydantic AI (Updated to resolve conflicts)
+pydantic-ai==0.2.4
+asgiref
+
+# Web Server
+gunicorn
+uvicorn[standard]==0.34.3  # ASGI server
+uvicorn-worker
+
+# FastAPI and dependencies
+fastapi[standard]==0.115.6
+starlette
+httpx
+
+# Search and Data
+marqo==3.11.0
+rapidfuzz
+
+# Authentication and Security
 PyJWT
 cryptography
 
-# Language and Localization
-langcodes
-
-# File Processing
-openpyxl
-
-### Pydantic AI 
-pydantic-ai==0.2.3
-asgiref
-
-
-gunicorn
-uvicorn
-httpx
-marqo==3.11.0
-
-# Tenacity
-tenacity
-langcodes
-
-# AWS
+# AWS and Services
 boto3
+mapbox
 
-# Mapbox Geocoding
-geopy
+# Async utilities
+aiofiles==23.2.1
+aiocache==0.12.3
+pydantic-settings==2.9.1
+python-dateutil
 
-rapidfuzz
-fastapi
-aiocache
+langcodes[data]==3.4.0
