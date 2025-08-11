@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
 
 # Load term pairs from JSON file
-with open('assets/word_mapping_v3.json', 'r', encoding='utf-8') as f:
+with open('assets/term_glossary.json', 'r', encoding='utf-8') as f:
     term_pairs = json.load(f)
 
 class Language(str, Enum):
@@ -13,7 +13,7 @@ class Language(str, Enum):
     TRANSLITERATION = "transliteration"
 
 class TermPair(BaseModel):
-    en: str = Field(description="English term")
+    en: str = Field(description="E nglish term")
     mr: str = Field(description="Marathi term")
     transliteration: str = Field(description="Transliteration of Marathi term to English")
 
