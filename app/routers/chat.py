@@ -3,7 +3,7 @@ import uuid
 import asyncio
 from fastapi import APIRouter, BackgroundTasks
 from helpers.utils import get_logger
-from app.utils import _get_message_history
+from app.utils import get_message_history
 from app.tasks.suggestions import create_suggestions
 from app.services.chat import stream_chat_messages
 from app.models.requests import ChatRequest
@@ -24,7 +24,7 @@ async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
     )
     
     # Get the message history
-    history = await _get_message_history(session_id)
+    history = await get_message_history(session_id)
     logger.debug(f"Retrieved message history for session {session_id} - length: {len(history)}")
 
     # Create suggestions for the session: 1, 3, 5, 7, ...
