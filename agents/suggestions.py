@@ -1,4 +1,4 @@
-from pydantic_ai import Agent
+from pydantic_ai import Agent, ToolOutput
 from pydantic_ai.settings import ModelSettings
 from typing import List
 from helpers.utils import get_prompt
@@ -11,9 +11,11 @@ suggestions_agent = Agent(
     name="Suggestions Agent",
     model=LLM_MODEL,
     system_prompt=get_prompt('suggestions_system'),
-    output_type=List[str],
-    result_tool_name="suggestions",
-    result_tool_description="A list of 3-5 suggested questions for the farmer to ask.",
+    output_type=ToolOutput(
+        List[str], 
+        name="suggestions", 
+        description="A list of 3-5 suggested questions for the farmer to ask."
+    ),
     retries=1,
     end_strategy='exhaustive',
     tools=[

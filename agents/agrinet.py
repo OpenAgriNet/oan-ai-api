@@ -10,10 +10,10 @@ agrinet_agent = Agent(
     model=LLM_MODEL,
     name="Vistaar Agent",
     output_type=str,
-    deps=FarmerContext,
+    deps_type=FarmerContext,
     retries=3,
     tools=TOOLS,
-    system_prompt=get_prompt('agrinet_system', context={'today_date': get_today_date_str()}),
+    system_prompt=get_prompt('en', context={'today_date': get_today_date_str()}),
     end_strategy='exhaustive',
     model_settings=ModelSettings(
         max_tokens=8192,
