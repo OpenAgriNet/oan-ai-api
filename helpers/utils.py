@@ -1,5 +1,6 @@
 # oan/helpers/utils.py
 
+import math
 import os
 import re
 from typing import List, Dict
@@ -262,3 +263,18 @@ def upload_audio_to_s3(audio_base64: str, session_id: str, bucket_name: str = No
         logger = get_logger(__name__)
         logger.error(f"Error uploading audio to S3: {str(e)}")
         raise
+    
+    
+    
+def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate distance between two coordinates in kilometers."""
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    return 2 * R * math.asin(math.sqrt(a))
