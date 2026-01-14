@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
-from typing import Optional
+from typing import Dict, Optional
 from pydantic import BaseModel, Field, field_validator
 from helpers.utils import get_logger
 
@@ -11,19 +11,23 @@ logger = get_logger(__name__)
 load_dotenv()
 
 # Initialize Nominatim geocoder (self-hosted)
+from geopy.geocoders import Nominatim
+
 geocoder = Nominatim(
-    user_agent="bharathvistaar", 
-    domain="nominatim:8080",
+    user_agent="ethiopia_agri_chatbot",
+    domain=os.getenv("NOMINATIM_DOMAIN", ""),  
     scheme="http",
     timeout=10
 )
+
 
 class Location(BaseModel):
     """Location model for the maps tool."""
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     place_name: Optional[str] = None
-
+    address: Dict[str, str]
+    
     @field_validator('latitude', 'longitude')
     @classmethod
     def round_coordinates(cls, v):
@@ -57,35 +61,62 @@ class Location(BaseModel):
 
 
 def forward_geocode(place_name: str) -> Optional[Location]:
-    """Forward geocoding using Nominatim."""
+    """Use this tool to get latitude and longitude of a place given its name."""
     try:
-        response = geocoder.geocode(place_name, exactly_one=True, addressdetails=True, country_codes='in')
-
+        response = geocoder.geocode(
+            place_name,
+            exactly_one=True,
+            addressdetails=True,
+            country_codes='et',
+            language='en'
+        )
+        logger.info(f"Forward geocoding response: {response}")
         if response:
+            # Get address details if available
+            raw = response.raw
+            address = raw.get("address", {})
+
             return Location(
                 place_name=response.raw['display_name'],
                 latitude=response.latitude,
-                longitude=response.longitude
+                longitude=response.longitude,
+                address=address
             )
-        else:
-            logger.info("No results found.")
+
+        logger.info("No results found.")
+        return None
+
     except (GeocoderTimedOut, GeocoderServiceError) as e:
         logger.error(f"Forward geocoding error: {e}")
-    return None
+        return None
 
 
 def reverse_geocode(latitude: float, longitude: float) -> Optional[Location]:
-    """Reverse geocoding using Nominatim."""
+    """Use this tool to get the place name given its latitude and longitude."""
     try:
-        location = geocoder.reverse((latitude, longitude), exactly_one=True)
-        if location:
-            return Location(
+        location = geocoder.reverse(
+            (latitude, longitude), 
+            exactly_one=True, 
+            addressdetails=True,
+            zoom=10,
+            language='en'
+            )
+        logger.info(f"Reverse geocoding response: {location}")
+        
+        if not location:
+            logger.info("No reverse geocoding result found.")
+            return None
+        
+        raw = location.raw
+        address = raw.get("address", {})
+        
+        return Location(
                 place_name=location.raw['display_name'],
                 latitude=latitude,
-                longitude=longitude
+                longitude=longitude,
+                address=address
             )
-        else:
-            logger.info("No results found.")
+        
     except (GeocoderTimedOut, GeocoderServiceError) as e:
         logger.error(f"Reverse geocoding error: {e}")
     return None
