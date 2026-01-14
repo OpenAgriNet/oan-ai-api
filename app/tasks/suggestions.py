@@ -1,6 +1,6 @@
 from app.core.cache import cache
 from helpers.utils import get_logger
-from app.utils import _get_message_history, trim_history, format_message_pairs
+from app.utils import get_message_history, trim_history, format_message_pairs
 from agents.suggestions import suggestions_agent
 from langcodes import Language
 
@@ -17,7 +17,7 @@ async def create_suggestions(session_id: str, target_lang: str = 'mr'):
 
     target_lang_name = Language.get(target_lang).display_name(target_lang)
 
-    history   = trim_history(await _get_message_history(session_id),
+    history   = trim_history(await get_message_history(session_id),
                              30_000,
                              include_tool_calls=False,
                              include_system_prompts=False
