@@ -1,13 +1,15 @@
 
 from typing import AsyncGenerator
+import json
 from agents.agrinet import agrinet_agent
 from agents.moderation import moderation_agent
 from helpers.utils import get_logger
 from app.utils import (
-    update_message_history, 
-    trim_history, 
+    update_message_history,
+    trim_history,
     format_message_pairs
 )
+from app.utils import extract_sources_from_result
 from dotenv import load_dotenv
 from agents.deps import FarmerContext
 from helpers.utils import get_logger
@@ -46,24 +48,47 @@ async def stream_chat_messages(
     deps.update_moderation_str(str(moderation_data))
 
     # Run the main agent
-    async with agrinet_agent.run_stream(
-        user_prompt=deps.get_user_message(),
-        message_history=trim_history(
-            history,
-            max_tokens=60_000,
-            include_system_prompts=True,
-            include_tool_calls=True
-        ),
-        deps=deps,
-    ) as response_stream:  # response_stream is a StreamedRunResult
-        async for chunk in response_stream.stream_text(delta=True, debounce_by=0.1):
-            if chunk:  # Ensure non-empty chunks are yielded
-                yield chunk
-        
-        # After streaming is complete, get the run result for history
-        new_messages = response_stream.new_messages()
-        messages = [
-            *history,
-            *new_messages
-        ]
-        await update_message_history(session_id, messages)
+    # async with agrinet_agent.run_stream(
+    #     user_prompt=deps.get_user_message(),
+    #     message_history=trim_history(
+    #         history,
+    #         max_tokens=60_000,
+    #         include_system_prompts=True,
+    #         include_tool_calls=True
+    #     ),
+    #     deps=deps,
+    # ) as response_stream:  # response_stream is a StreamedRunResult
+    #     previous_text = ""
+    #     response_stream.get_output()
+    #     async for chunk in response_stream.stream_output():
+    #         new_text = chunk[len(previous_text):]
+    #         if new_text:
+    #             yield new_text
+    #         previous_text = chunk
+
+    response_stream = await agrinet_agent.run(
+            user_prompt=deps.get_user_message(),
+            message_history=trim_history(
+                history,
+                max_tokens=60_000,
+                include_system_prompts=True,
+                include_tool_calls=True
+            ),
+            deps=deps,
+        )
+    yield response_stream.output
+    # Extract sources from tool calls
+    sources = extract_sources_from_result(response_stream)
+
+    # Save messages to history
+    new_messages = response_stream.new_messages()
+    messages = [
+        *history,
+        *new_messages
+    ]
+    await update_message_history(session_id, messages)
+
+    # Send sources as SSE metadata event (if any)
+    if sources:
+        metadata = json.dumps({"sources": sources})
+        yield f"event: metadata\ndata: {metadata}\n\n"
