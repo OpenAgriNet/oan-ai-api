@@ -13,6 +13,7 @@ from app.config import settings
 from app.routers import chat_router, suggestions_router, transcribe_router, tts_router
 from app.routers.health import router as health_router
 from app.core.cache import cache
+from app.database import close_db
 from helpers.utils import get_logger
 
 logger = get_logger(__name__)
@@ -25,7 +26,7 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting up MahaVistaar AI API...")
-    
+
     # Test cache connection
     try:
         await cache.set("health_check", "ok", ttl=60)
@@ -36,13 +37,21 @@ async def lifespan(app: FastAPI):
             logger.warning("⚠️ Cache connection issue - values not persisting correctly")
     except Exception as e:
         logger.error(f"❌ Cache connection failed: {str(e)}")
-    
+
+    # Initialize database connection pool
+    logger.info("✅ Database engine initialized")
+
     logger.info("✅ Application startup complete")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down MahaVistaar AI API...")
+
+    # Close database connections
+    await close_db()
+    logger.info("✅ Database connections closed")
+
     logger.info("✅ Application shutdown complete")
 
 def create_app() -> FastAPI:
