@@ -1,4 +1,5 @@
 from typing import List
+from app.constants import TOOL_SOURCE_MAP
 from app.core.cache import cache
 from helpers.utils import get_logger, count_tokens_for_part
 from copy import deepcopy
@@ -45,7 +46,7 @@ async def set_cache(key: str, value, ttl: int = DEFAULT_CACHE_TTL):
     await cache.set(key, value, ttl=ttl)
     return True
 
-async def _get_message_history(session_id: str) -> List[ModelMessage]:
+async def get_message_history(session_id: str) -> List[ModelMessage]:
     """Get or initialize message history."""
     message_history = await cache.get(f"{session_id}_{HISTORY_SUFFIX}")
     if message_history:
@@ -291,3 +292,53 @@ def trim_history(
     # 8. Flatten into a single list
     trimmed = [msg for turn in final_turns for msg in turn if msg.parts]
     return trimmed
+
+
+def extract_sources_from_result(result) -> List[str]:
+    """
+    Extract unique data sources from pydantic-ai agent result.
+
+    Args:
+        result: Agent run result with new_messages()
+
+    Returns:
+        List of unique source names (e.g., ["OpenWeatherMap", "https://nmis.et/"])
+    """
+    sources = set()
+
+    try:
+        if not hasattr(result, "new_messages"):
+            logger.warning("Result does not have new_messages method")
+            return []
+
+        new_messages = result.new_messages()
+
+        for msg in new_messages:
+            # Check if message has parts (tool calls)
+            if not hasattr(msg, 'parts'):
+                continue
+
+            for part in msg.parts:
+                # Check if part is a tool call
+                kind = getattr(part, 'part_kind', 'unknown')
+
+                if kind == 'tool-call':
+                    tool_name = getattr(part, 'tool_name', None)
+
+                    if tool_name:
+                        logger.debug(f"Found tool call: {tool_name}")
+
+                        # Map tool name to source
+                        source_name = TOOL_SOURCE_MAP.get(tool_name)
+
+                        if source_name:
+                            sources.add(source_name)
+                            logger.info(f"Mapped tool '{tool_name}' to source '{source_name}'")
+                        else:
+                            logger.warning(f"No source mapping for tool: {tool_name}")
+                else:
+                    logger.warning(f"Unknown part kind: {kind}")
+    except Exception as e:
+        logger.error(f"Error extracting sources: {e}", exc_info=True)
+
+    return sorted(list(sources))
