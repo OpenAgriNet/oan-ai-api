@@ -50,6 +50,16 @@ class Settings(BaseSettings):
     default_cache_ttl: int = 60 * 60 * 24  # 24 hours
     suggestions_cache_ttl: int = 60 * 30    # 30 minutes
 
+    # PostgreSQL Database Configuration
+    database_url: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/load_agri")
+    db_pool_size: int = int(os.getenv("DB_POOL_SIZE", "20"))
+    db_max_overflow: int = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+
+    # NMIS Data Scraper Configuration
+    nmis_api_base_url: str = "http://nmis.et/api"
+    scraper_timeout: int = 30  # seconds
+    scraper_enabled: bool = os.getenv("SCRAPER_ENABLED", "true").lower() == "true"
+
     # Logging Configuration
     log_level: str = "INFO"
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
