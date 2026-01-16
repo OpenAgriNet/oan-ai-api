@@ -91,6 +91,32 @@ View application logs:
 docker logs -f oan_app
 ```
 
+## Database Migrations
+
+This project uses Alembic for database migrations.
+
+### Run Migrations
+```bash
+# Run all pending migrations
+alembic upgrade head
+
+# Check current migration version
+alembic current
+
+# View migration history
+alembic history
+```
+
+### Create New Migration
+```bash
+# Auto-generate migration from model changes
+alembic revision --autogenerate -m "description of changes"
+
+# Review the generated migration file in alembic/versions/
+# Then run the migration
+alembic upgrade head
+```
+
 ## API Reference
 
 ### Base URL

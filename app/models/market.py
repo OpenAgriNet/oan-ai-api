@@ -20,6 +20,7 @@ class Marketplace(Base):
     marketplace_id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
     name_amharic = Column(String(255))
+    marketplace_type = Column(String(20), nullable=False)  # 'crop' or 'livestock'
     region = Column(String(100))
     region_amharic = Column(String(100))
     latitude = Column(DECIMAL(10, 7))  # For weather queries
@@ -33,7 +34,9 @@ class Marketplace(Base):
     prices = relationship("MarketPrice", back_populates="marketplace", cascade="all, delete-orphan")
 
     __table_args__ = (
+        CheckConstraint("marketplace_type IN ('crop', 'livestock')", name='ck_marketplace_type'),
         Index('idx_marketplace_name', 'name'),
+        Index('idx_marketplace_type', 'marketplace_type'),
         Index('idx_marketplace_region', 'region'),
         Index('idx_marketplace_name_lower', func.lower(name)),
         Index('idx_marketplace_name_amharic', 'name_amharic'),
