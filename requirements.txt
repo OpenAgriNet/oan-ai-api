@@ -14,6 +14,7 @@ simplejson
 
 # Database (if needed for future use)
 sqlalchemy
+alembic
 psycopg2-binary==2.9.9
 psycopg[pool]==3.2.6   # for connection pooling
 asyncpg==0.31.0
