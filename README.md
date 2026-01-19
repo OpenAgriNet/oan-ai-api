@@ -117,6 +117,19 @@ alembic revision --autogenerate -m "description of changes"
 alembic upgrade head
 ```
 
+## Market Data Scraper
+
+Syncs crop and livestock prices from NMIS API (nmis.et) with bilingual support (English/Amharic). Clears prices and logs each run to database.
+
+```bash
+python scripts/run_all_scrapers.py
+```
+
+Cron (daily 6 AM):
+```
+0 6 * * * cd /path/to/load_agri && python scripts/run_all_scrapers.py >> /var/log/scraper.log 2>&1
+```
+
 ## API Reference
 
 ### Base URL

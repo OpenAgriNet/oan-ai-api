@@ -7,61 +7,93 @@ Usage:
 
 import asyncio
 import sys
-import os
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from sqlalchemy import delete
+from app.database import async_session_maker
+from app.models.market import MarketPrice, ScraperLog
 from helpers.utils import get_logger
 
 logger = get_logger(__name__)
 
 
+async def clear_prices():
+    """Delete all prices before fresh sync"""
+    async with async_session_maker() as db:
+        await db.execute(delete(MarketPrice))
+        await db.commit()
+        logger.info("Cleared market_prices table")
+
+
+async def log_scraper(scraper_type: str, status: str, started_at: datetime, stats: dict = None, error: str = None):
+    """Log scraper run to database"""
+    async with async_session_maker() as db:
+        completed_at = datetime.now(timezone.utc)
+        duration_ms = int((completed_at - started_at).total_seconds() * 1000)
+
+        log = ScraperLog(
+            scraper_type=scraper_type,
+            status=status,
+            started_at=started_at,
+            completed_at=completed_at,
+            duration_ms=duration_ms,
+            records_fetched=stats.get("fetched", 0) if stats else 0,
+            records_inserted=stats.get("inserted", 0) if stats else 0,
+            records_updated=stats.get("updated", 0) if stats else 0,
+            records_failed=stats.get("errors", 0) if stats else 0,
+            error_message=error,
+            meta_data=stats or {}
+        )
+        db.add(log)
+        await db.commit()
+
+
 async def run_all():
     """Run all scrapers in dependency order"""
-    start_time = datetime.now()
+    start_time = datetime.now(timezone.utc)
 
-    logger.info("=" * 80)
+    logger.info("=" * 60)
     logger.info("Starting all data scrapers")
-    logger.info("=" * 80)
+    logger.info("=" * 60)
+
+    # Clear prices table first
+    await clear_prices()
 
     scrapers = [
-        ("Marketplaces", "scripts.scrapers.sync_marketplaces"),
-        ("Crops", "scripts.scrapers.sync_crops"),
-        ("Livestock", "scripts.scrapers.sync_livestock"),
-        ("Crop Varieties", "scripts.scrapers.sync_crop_varieties"),
-        ("Livestock Varieties", "scripts.scrapers.sync_livestock_varieties"),
-        ("Crop Prices", "scripts.scrapers.sync_crop_prices"),
-        ("Livestock Prices", "scripts.scrapers.sync_livestock_prices"),
+        ("marketplaces", "scripts.scrapers.sync_marketplaces"),
+        ("crops", "scripts.scrapers.sync_crops"),
+        ("livestock", "scripts.scrapers.sync_livestock"),
+        ("crop_varieties", "scripts.scrapers.sync_crop_varieties"),
+        ("livestock_varieties", "scripts.scrapers.sync_livestock_varieties"),
+        ("crop_prices", "scripts.scrapers.sync_crop_prices"),
+        ("livestock_prices", "scripts.scrapers.sync_livestock_prices"),
     ]
 
     results = {}
 
     for name, module_path in scrapers:
-        logger.info(f"\n{'=' * 80}")
-        logger.info(f"Starting scraper: {name}")
-        logger.info(f"{'=' * 80}")
+        scraper_start = datetime.now(timezone.utc)
+        logger.info(f"\n[{name}] Starting...")
+
         try:
-            # Dynamically import and run the scraper
             module = __import__(module_path, fromlist=['main'])
             await module.main()
             results[name] = "success"
+            await log_scraper(name, "success", scraper_start)
         except Exception as e:
-            logger.error(f"Scraper {name} failed: {e}", exc_info=True)
-            results[name] = f"failed: {str(e)}"
+            logger.error(f"[{name}] Failed: {e}")
+            results[name] = "failed"
+            await log_scraper(name, "failed", scraper_start, error=str(e))
 
-    duration = (datetime.now() - start_time).total_seconds()
+    duration = (datetime.now(timezone.utc) - start_time).total_seconds()
 
-    logger.info(f"\n{'=' * 80}")
-    logger.info(f"All scrapers completed in {duration:.2f}s")
-    logger.info(f"{'=' * 80}")
-
-    # Print summary
-    logger.info("\nSummary:")
+    logger.info(f"\n{'=' * 60}")
+    logger.info(f"Completed in {duration:.2f}s")
     for name, result in results.items():
-        status_symbol = "✓" if result == "success" else "✗"
-        logger.info(f"  {status_symbol} {name}: {result}")
+        logger.info(f"  {'✓' if result == 'success' else '✗'} {name}")
 
 
 if __name__ == "__main__":

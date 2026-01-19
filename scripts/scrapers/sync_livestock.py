@@ -44,7 +44,6 @@ async def fetch_marketplace_livestock(marketplace_id: int):
 
             merged_data = []
             for en_item in en_data:
-                print(en_item)
                 livestock_id = en_item.get("id")
                 livestock_name = en_item.get("cropName", "")
 
@@ -68,7 +67,6 @@ async def upsert_livestock(db, livestock_data: Dict[str, Any]) -> Dict[str, Any]
         livestock_name = livestock_data.get("cropName", "")
         livestock_name_am = livestock_data.get("cropName_am", "")
         nmis_livestock_id = livestock_data.get("id")
-        print(nmis_livestock_id, livestock_name)
         if not livestock_name:
             raise ValueError("cropName (livestock name) is required")
 
