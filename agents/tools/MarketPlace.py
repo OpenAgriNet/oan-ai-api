@@ -1,13 +1,18 @@
-import math
 from typing import List, Dict, Optional, Union
+from app.database import async_session_maker
+from app.models.market import Marketplace
+from sqlalchemy import select, func, or_
+from helpers.market_place_json import MARKETPLACES, LIVESTOCK_MARKETPLACES
+from helpers.utils import haversine, get_logger
 
-from helpers.market_place_json import ACTIVE_CROP_MARKETPLACE, ACTIVE_LIVESTOCK_MARKETPLACE, EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES, EXACT_MATCH_UP_MARKETPLACES, MARKETPLACES, LIVESTOCK_MARKETPLACES
-from helpers.utils import haversine
-from helpers.utils import get_logger
 logger = get_logger(__name__)
 
 
-def list_active_crop_marketplaces()-> Dict:
+# ============================================================================
+# CROP MARKETPLACE TOOLS
+# ============================================================================
+
+async def list_active_crop_marketplaces() -> Dict[str, str]:
     """
     Get dictionary mapping English to Amharic names for all active crop marketplaces.
 
@@ -22,7 +27,117 @@ def list_active_crop_marketplaces()-> Dict:
 
     Note: ALL subsequent tool calls must use English names (dictionary keys)
     """
-    return ACTIVE_CROP_MARKETPLACE
+    async with async_session_maker() as db:
+        stmt = select(Marketplace.name, Marketplace.name_amharic).where(
+            Marketplace.marketplace_type == "crop",
+            Marketplace.is_active == True
+        ).order_by(Marketplace.name)
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        return {row.name: row.name_amharic or "" for row in rows}
+
+
+async def find_crop_marketplace_by_name(
+    marketplace_name: str,
+    region: Optional[str] = None
+) -> Union[Dict, str, None]:
+    """
+    Find a crop marketplace by name and return its details.
+
+    Parameters:
+        marketplace_name (str): Name of the marketplace (English or Amharic)
+        region (str): Optional region to disambiguate if same name exists in multiple regions
+
+    Returns:
+        dict: Marketplace details if found
+        str: Error message if multiple matches found
+        None: If not found
+    """
+    logger.info(f"find_crop_marketplace_by_name: {marketplace_name}, region={region}")
+
+    async with async_session_maker() as db:
+        stmt = select(Marketplace).where(
+            Marketplace.marketplace_type == "crop",
+            Marketplace.is_active == True,
+            or_(
+                func.lower(Marketplace.name) == func.lower(marketplace_name),
+                func.lower(Marketplace.name_amharic) == func.lower(marketplace_name),
+                func.lower(Marketplace.name).contains(func.lower(marketplace_name)),
+                func.lower(Marketplace.name_amharic).contains(func.lower(marketplace_name))
+            )
+        )
+
+        if region:
+            stmt = stmt.where(
+                or_(
+                    func.lower(Marketplace.region) == func.lower(region),
+                    func.lower(Marketplace.region_amharic) == func.lower(region)
+                )
+            )
+
+        result = await db.execute(stmt)
+        marketplaces = result.scalars().all()
+
+        if not marketplaces:
+            return None
+
+        if len(marketplaces) == 1:
+            m = marketplaces[0]
+            return {
+                "name": m.name,
+                "name_amharic": m.name_amharic,
+                "region": m.region,
+                "region_amharic": m.region_amharic,
+                "latitude": m.latitude,
+                "longitude": m.longitude
+            }
+
+        # Multiple matches
+        regions_list = [f"{m.name} ({m.region})" for m in marketplaces]
+        return f"Multiple marketplaces found: {', '.join(regions_list)}. Please specify region."
+
+
+async def list_crop_marketplaces_by_region(region: str) -> Union[List[Dict], str]:
+    """
+    List all crop marketplaces in a specified region.
+
+    Parameters:
+        region (str): Region name (English or Amharic)
+
+    Returns:
+        List[dict] | str: List of marketplaces in the region
+    """
+    logger.info(f"list_crop_marketplaces_by_region: {region}")
+
+    async with async_session_maker() as db:
+        stmt = select(Marketplace).where(
+            Marketplace.marketplace_type == "crop",
+            Marketplace.is_active == True,
+            or_(
+                func.lower(Marketplace.region) == func.lower(region),
+                func.lower(Marketplace.region_amharic) == func.lower(region)
+            )
+        ).order_by(Marketplace.name)
+
+        result = await db.execute(stmt)
+        marketplaces = result.scalars().all()
+
+        if not marketplaces:
+            return f"No crop marketplaces found in {region} region."
+
+        return [
+            {
+                "name": m.name,
+                "name_amharic": m.name_amharic,
+                "latitude": m.latitude,
+                "longitude": m.longitude,
+                "region": m.region
+            }
+            for m in marketplaces
+        ]
+
 
 def find_nearest_crop_marketplaces(
     user_lat: float,
@@ -42,12 +157,8 @@ def find_nearest_crop_marketplaces(
         limit (int): Maximum number of marketplaces to return
 
     Returns:
-        List[dict] | str: Nearest marketplaces sorted by distance, or error message if region not supported
-
-    Raises:
-        ValueError: If coordinates or numeric parameters are invalid
+        List[dict] | str: Nearest marketplaces sorted by distance
     """
-    # Validate inputs
     if not -90 <= user_lat <= 90:
         raise ValueError(f"Invalid latitude: {user_lat}. Must be between -90 and 90.")
     if not -180 <= user_lon <= 180:
@@ -60,10 +171,9 @@ def find_nearest_crop_marketplaces(
     logger.info(f"find_nearest_crop_marketplaces: region={region}")
 
     if region not in MARKETPLACES:
-        return "Can you check in the supported regions: Amhara, Oromia, Tigray, Sidama, South West Ethiopia, SNNP"    
-    
-    results = []
+        return "Can you check in the supported regions: Amhara, Oromia, Tigray, Sidama, South West Ethiopia, SNNP"
 
+    results = []
     for m in MARKETPLACES[region]:
         distance = haversine(user_lat, user_lon, m["lat"], m["lon"])
         if distance <= radius_km:
@@ -78,62 +188,11 @@ def find_nearest_crop_marketplaces(
     return results[:limit]
 
 
-
-def find_crop_marketplace_by_name(
-    marketplace_name: str,
-) -> Optional[Dict]:
-    """
-    Find a marketplace by name and return its details.
-
-    This tool is used when the user searches for a marketplace directly
-    by name, without providing location or asking for nearby results.
-
-    Parameters:
-        marketplace_name (str): Name of the marketplace provided by the user
-
-    Returns:
-        dict | None: Marketplace details if found, otherwise None
-    """
-    logger.info(f"find_crop_marketplace_by_name: {marketplace_name}")
-
-    res = EXACT_MATCH_UP_MARKETPLACES.get(marketplace_name, None)
-
-    return res
-
-
-def list_crop_marketplaces_by_region(region: str) -> Union[List[Dict], str]:
-    """
-    List all marketplaces in a specified region.
-
-    This tool is used when the user requests a list of marketplaces
-    available in a certain region.
-
-    Parameters:
-        region (str): Region name
-    Returns:
-        List[dict] | str: List of marketplaces in the region, or error message if region not supported
-    """
-    logger.info(f"list_crop_marketplaces_by_region: {region}")
-    if region not in MARKETPLACES:
-        return "Can you check in the supported regions: Amhara, Oromia, Tigray, Sidama, South West Ethiopia, SNNP"
-
-    return [
-        {
-            "name": m["name"],
-            "latitude": m["lat"],
-            "longitude": m["lon"],
-            "region": region
-        }
-        for m in MARKETPLACES[region]
-    ]
-    
-    
 # ============================================================================
-# LIVESTOCK MARKETPLACE DISCOVERY
+# LIVESTOCK MARKETPLACE TOOLS
 # ============================================================================
- 
 
-def list_active_livestock_marketplaces()->Dict:
+async def list_active_livestock_marketplaces() -> Dict[str, str]:
     """
     Get dictionary mapping English to Amharic names for all active livestock marketplaces.
 
@@ -148,9 +207,117 @@ def list_active_livestock_marketplaces()->Dict:
 
     Note: ALL subsequent tool calls must use English names (dictionary keys)
     """
+    async with async_session_maker() as db:
+        stmt = select(Marketplace.name, Marketplace.name_amharic).where(
+            Marketplace.marketplace_type == "livestock",
+            Marketplace.is_active == True
+        ).order_by(Marketplace.name)
 
-    return ACTIVE_LIVESTOCK_MARKETPLACE
-    
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        return {row.name: row.name_amharic or "" for row in rows}
+
+
+async def find_livestock_marketplace_by_name(
+    marketplace_name: str,
+    region: Optional[str] = None
+) -> Union[Dict, str, None]:
+    """
+    Find a livestock marketplace by name and return its details.
+
+    Parameters:
+        marketplace_name (str): Name of the livestock marketplace (English or Amharic)
+        region (str): Optional region to disambiguate if same name exists in multiple regions
+
+    Returns:
+        dict: Livestock marketplace details if found
+        str: Error message if multiple matches found
+        None: If not found
+    """
+    logger.info(f"find_livestock_marketplace_by_name: {marketplace_name}, region={region}")
+
+    async with async_session_maker() as db:
+        stmt = select(Marketplace).where(
+            Marketplace.marketplace_type == "livestock",
+            Marketplace.is_active == True,
+            or_(
+                func.lower(Marketplace.name) == func.lower(marketplace_name),
+                func.lower(Marketplace.name_amharic) == func.lower(marketplace_name),
+                func.lower(Marketplace.name).contains(func.lower(marketplace_name)),
+                func.lower(Marketplace.name_amharic).contains(func.lower(marketplace_name))
+            )
+        )
+
+        if region:
+            stmt = stmt.where(
+                or_(
+                    func.lower(Marketplace.region) == func.lower(region),
+                    func.lower(Marketplace.region_amharic) == func.lower(region)
+                )
+            )
+
+        result = await db.execute(stmt)
+        marketplaces = result.scalars().all()
+
+        if not marketplaces:
+            return None
+
+        if len(marketplaces) == 1:
+            m = marketplaces[0]
+            return {
+                "name": m.name,
+                "name_amharic": m.name_amharic,
+                "region": m.region,
+                "region_amharic": m.region_amharic,
+                "latitude": m.latitude,
+                "longitude": m.longitude
+            }
+
+        # Multiple matches
+        regions_list = [f"{m.name} ({m.region})" for m in marketplaces]
+        return f"Multiple marketplaces found: {', '.join(regions_list)}. Please specify region."
+
+
+async def list_livestock_marketplaces_by_region(region: str) -> Union[List[Dict], str]:
+    """
+    List all livestock marketplaces in a specified region.
+
+    Parameters:
+        region (str): Region name (English or Amharic)
+
+    Returns:
+        List[dict] | str: List of livestock marketplaces in the region
+    """
+    logger.info(f"list_livestock_marketplaces_by_region: {region}")
+
+    async with async_session_maker() as db:
+        stmt = select(Marketplace).where(
+            Marketplace.marketplace_type == "livestock",
+            Marketplace.is_active == True,
+            or_(
+                func.lower(Marketplace.region) == func.lower(region),
+                func.lower(Marketplace.region_amharic) == func.lower(region)
+            )
+        ).order_by(Marketplace.name)
+
+        result = await db.execute(stmt)
+        marketplaces = result.scalars().all()
+
+        if not marketplaces:
+            return f"No livestock marketplaces found in {region} region."
+
+        return [
+            {
+                "name": m.name,
+                "name_amharic": m.name_amharic,
+                "latitude": m.latitude,
+                "longitude": m.longitude,
+                "region": m.region
+            }
+            for m in marketplaces
+        ]
+
 
 def find_nearest_livestock_marketplaces(
     user_lat: float,
@@ -170,12 +337,8 @@ def find_nearest_livestock_marketplaces(
         limit (int): Maximum number of marketplaces to return
 
     Returns:
-        List[dict] | str: Nearest livestock marketplaces sorted by distance, or error message if region not supported
-
-    Raises:
-        ValueError: If coordinates or numeric parameters are invalid
+        List[dict] | str: Nearest livestock marketplaces sorted by distance
     """
-    # Validate inputs
     if not -90 <= user_lat <= 90:
         raise ValueError(f"Invalid latitude: {user_lat}. Must be between -90 and 90.")
     if not -180 <= user_lon <= 180:
@@ -187,10 +350,9 @@ def find_nearest_livestock_marketplaces(
 
     logger.info(f"find_nearest_livestock_marketplaces: region={region}")
     if region not in LIVESTOCK_MARKETPLACES:
-        return "Can you check in the supported regions: Afar, Oromia Somali"
+        return "Can you check in the supported regions: Afar, Oromia, Somali"
 
     results = []
-
     for m in LIVESTOCK_MARKETPLACES[region]:
         distance = haversine(user_lat, user_lon, m["lat"], m["lon"])
         if distance <= radius_km:
@@ -203,53 +365,3 @@ def find_nearest_livestock_marketplaces(
 
     results.sort(key=lambda x: x["distance_km"])
     return results[:limit]
-
-
-def find_livestock_marketplace_by_name(
-    marketplace_name: str,
-) -> Optional[Dict]:
-    """
-    Find a livestock marketplace by name and return its details.
-
-    This tool is used when the user searches for a livestock marketplace directly
-    by name, without providing location or asking for nearby results.
-
-    Parameters:
-        marketplace_name (str): Name of the livestock marketplace provided by the user
-
-    Returns:
-        dict | None: Livestock marketplace details if found, otherwise None
-    """
-    logger.info(f"find_livestock_marketplace_by_name: {marketplace_name}")
-
-    res = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.get(marketplace_name, None)
-
-    return res
-
-
-def list_livestock_marketplaces_by_region(region: str) -> Union[List[Dict], str]:
-    """
-    List all livestock marketplaces in a specified region.
-
-    This tool is used when the user requests a list of livestock marketplaces
-    available in a certain region.
-
-    Parameters:
-        region (str): Region name
-    Returns:
-        List[dict] | str: List of livestock marketplaces in the region, or error message if region not supported
-    """
-    logger.info(f"list_livestock_marketplaces_by_region: {region}")
-    if region not in LIVESTOCK_MARKETPLACES:
-        return "Can you check in the supported regions: Afar, Oromia, Somali"
-
-    return [
-        {
-            "name": m["name"],
-            "latitude": m["lat"],
-            "longitude": m["lon"],
-            "region": region
-        }
-        for m in LIVESTOCK_MARKETPLACES[region]
-    ]
-
