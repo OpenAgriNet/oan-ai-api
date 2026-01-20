@@ -92,7 +92,10 @@ class Settings(BaseSettings):
     llm_provider: Optional[str] = None
     llm_model_name: Optional[str] = None
     marqo_index_name: Optional[str] = None
-
+    
+    # Azure Configuration
+    azure_foundary_api_key: Optional[str] = None
+    azure_foundary_region: Optional[str] = None
     class Config:
         env_file = ".env"
         extra = 'ignore'  # Ignore extra fields from .env

@@ -1,5 +1,6 @@
 # oan/helpers/utils.py
 
+import io
 import math
 import os
 import re
@@ -8,11 +9,13 @@ import logging
 import boto3
 from dotenv import load_dotenv
 import base64
+import numpy as np
 import tiktoken
 import unicodedata as ud
 from datetime import datetime
 import simplejson as json
 from jinja2 import Environment, FileSystemLoader
+import soundfile as sf
 
 load_dotenv()
 
@@ -34,7 +37,7 @@ def get_today_date_str() -> str:
     return today.strftime('%A, %d %B %Y')
 
 
-def get_logger(name):
+def get_logger(name) -> logging.Logger:
     """Get logger object."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
@@ -278,3 +281,10 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         * math.sin(dlon / 2) ** 2
     )
     return 2 * R * math.asin(math.sqrt(a))
+
+
+def pcm_to_base64_wav(audio: np.ndarray, sr: int = 16000) -> str:
+    buffer = io.BytesIO()
+    sf.write(buffer, audio, sr, format="WAV", subtype="PCM_16")
+    buffer.seek(0)
+    return base64.b64encode(buffer.read()).decode("utf-8")

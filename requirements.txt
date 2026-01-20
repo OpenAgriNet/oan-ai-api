@@ -63,6 +63,14 @@ langcodes
 # AWS
 boto3
 
+# Azure
+azure-cognitiveservices-speech==1.47.0
+
+# VAD
+soundfile
+torch==2.9.1
+torchaudio==2.9.1
+
 # Mapbox Geocoding
 geopy
 

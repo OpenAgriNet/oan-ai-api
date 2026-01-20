@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.routers import chat_router, suggestions_router, transcribe_router, tts_router
+from app.routers import chat_router, suggestions_router, transcribe_router, tts_router, conversation_router
 from app.routers.health import router as health_router
 from app.core.cache import cache
 from app.database import close_db
@@ -82,7 +82,7 @@ def create_app() -> FastAPI:
     app.include_router(transcribe_router, prefix=settings.api_prefix)
     app.include_router(tts_router, prefix=settings.api_prefix)
     app.include_router(health_router, prefix=settings.api_prefix)
-    
+    app.include_router(conversation_router, prefix=settings.api_prefix)
     return app
 
 # Create the app instance
