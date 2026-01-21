@@ -82,7 +82,8 @@ def create_app() -> FastAPI:
     app.include_router(transcribe_router, prefix=settings.api_prefix)
     app.include_router(tts_router, prefix=settings.api_prefix)
     app.include_router(health_router, prefix=settings.api_prefix)
-    app.include_router(conversation_router, prefix=settings.api_prefix)
+    # Conversation router without /api prefix for backward compatibility with frontend
+    app.include_router(conversation_router)
     return app
 
 # Create the app instance
