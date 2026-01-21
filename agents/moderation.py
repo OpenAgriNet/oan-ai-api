@@ -26,15 +26,13 @@ moderation_agent = Agent(
     name="Moderation Agent",
     system_prompt=get_prompt('moderation_system'),
     output_type=QueryModerationResult,
-    retries=2,
+    retries=3,  # Increased to handle output validation failures
     model_settings=ModelSettings(
-        # max_tokens=350,  # Increased slightly to ensure complete reasoning + category
-        # temperature=0.5,  # Absolute determinism for consistent outputs
-        # top_p=0.95,      # Slightly higher to ensure all valid options are considered
+        max_tokens=200,  # Increased to ensure enough space for JSON output
+        temperature=0.0,  # Zero temperature for completely deterministic output
         parallel_tool_calls=False,
-        # extra_body={
-        #     "top_k": 40,  # Increased to provide a wider range of token options
-        #     "min_p": 0.05  # Small value to filter out extremely unlikely tokens
-        # }
+        thinking_config={
+            "thinking_level": "MINIMAL"  # Fast moderation decisions
+        }
     )
 )
