@@ -190,14 +190,14 @@ class AzureTranscriptionProvider(TranscriptionProvider):
             else:
                 logger.debug(f"Raw PCM format detected, size: {len(audio_bytes)} bytes")
 
-            # Define audio format: 16kHz, 16-bit, mono PCM
+            # Define audio format: 16kHz, 16-bit, mono PCM (matching old backend)
             audio_format = speechsdk.audio.AudioStreamFormat(
                 samples_per_second=16000,
                 bits_per_sample=16,
                 channels=1
             )
 
-            # Create audio stream from bytes with format specification
+            # Create audio stream with explicit format for better performance
             stream = speechsdk.audio.PushAudioInputStream(stream_format=audio_format)
             audio_config = speechsdk.audio.AudioConfig(stream=stream)
 
@@ -211,6 +211,7 @@ class AzureTranscriptionProvider(TranscriptionProvider):
             stream.write(audio_bytes)
             stream.close()
 
+            # Run blocking recognize_once in executor (non-blocking for async)
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
                 None,

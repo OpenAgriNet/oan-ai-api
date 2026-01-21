@@ -20,8 +20,7 @@ logger.info(f"LLM_MODEL_NAME loaded: '{LLM_MODEL_NAME}'")
 
 # Configure the model based on provider
 if LLM_PROVIDER == 'gemini':
-    # Use direct GoogleModel for optimal performance (same as old backend)
-    # This automatically uses GEMINI_API_KEY environment variable
+    # Use direct GoogleModel - settings will be passed at Agent level
     LLM_MODEL = GoogleModel(
         model_name=LLM_MODEL_NAME,
         # api_key will be read from GEMINI_API_KEY environment variable

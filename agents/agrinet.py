@@ -1,8 +1,7 @@
-from pydantic_ai import Agent
+from pydantic_ai import Agent, RunContext
 from helpers.utils import get_prompt, get_today_date_str
 from agents.models import LLM_MODEL
 from agents.tools import TOOLS
-from pydantic_ai.settings import ModelSettings
 from agents.deps import FarmerContext
 
 
@@ -11,14 +10,21 @@ agrinet_agent = Agent(
     name="AgriHelp Assistant",
     output_type=str,
     deps_type=FarmerContext,
-    retries=1,  # Match old backend (was 3) - fewer retries = faster
+    retries=1,
     tools=TOOLS,
-    system_prompt=get_prompt('en', context={'today_date': get_today_date_str()}),
     end_strategy='exhaustive',
-    model_settings=ModelSettings(
-        parallel_tool_calls=True,
-        thinking_config={
+    model_settings={
+        "max_output_tokens": 200,
+        "temperature": 0.2,
+        "thinking_config": {
             "thinking_level": "MINIMAL"
         }
-    )
+    }
 )
+
+# Use dynamic system prompt like old backend
+@agrinet_agent.system_prompt
+def dynamic_system_prompt(ctx: RunContext[FarmerContext]) -> str:
+    """Dynamic system prompt based on context"""
+    lang = ctx.deps.lang_code if ctx.deps else "en"
+    return get_prompt(lang, context={'today_date': get_today_date_str()})
