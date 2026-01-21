@@ -26,13 +26,13 @@ moderation_agent = Agent(
     name="Moderation Agent",
     system_prompt=get_prompt('moderation_system'),
     output_type=QueryModerationResult,
-    retries=3,  # Increased to handle output validation failures
+    retries=3,  
     model_settings=ModelSettings(
-        max_tokens=200,  # Increased to ensure enough space for JSON output
-        temperature=0.0,  # Zero temperature for completely deterministic output
+        max_tokens=200,  
+        temperature=0.0,  
         parallel_tool_calls=False,
         thinking_config={
-            "thinking_level": "MINIMAL"  # Fast moderation decisions
+            "thinking_level": "MINIMAL"  
         }
     )
 )

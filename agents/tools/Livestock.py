@@ -301,8 +301,8 @@ async def get_livestock_price_quick(
     livestock_normalized = livestock_lower
     plural_to_singular = {
         'oxen': 'ox',
-        'cattle': 'cow',  # Cattle often refers to cows in the database
-        'sheep': 'sheep',  # Already singular/plural same
+        'cattle': 'cow',  
+        'sheep': 'sheep',  
         'goats': 'goat',
         'camels': 'camel',
         'calves': 'calf',
@@ -334,7 +334,7 @@ async def get_livestock_price_quick(
             # Exact match (case-insensitive)
             if key_lower == name_lower or key_clean == clean_name:
                 marketplace_info = value
-                marketplace_name = key  # Use the correct case
+                marketplace_name = key  
                 break
     
     # If still not found, try partial matching (e.g., "Dubti" matches "Dubti Market")
@@ -348,7 +348,7 @@ async def get_livestock_price_quick(
             if (clean_name in key_clean or key_clean.startswith(clean_name) or 
                 clean_name.startswith(key_clean)):
                 marketplace_info = value
-                marketplace_name = key  # Use the correct case
+                marketplace_name = key 
                 logger.info(f"Fuzzy matched '{marketplace_name}' to '{key}'")
                 break
     
