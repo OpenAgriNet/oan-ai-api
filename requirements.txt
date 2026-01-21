@@ -48,7 +48,7 @@ openpyxl
 jinja2
 
 ### Pydantic AI 
-pydantic-ai==1.38.0
+pydantic-ai==1.42.0
 google-genai==1.57.0
 asgiref
 
