@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     python3-dev \
     curl \
+    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better Docker layer caching
@@ -27,13 +28,12 @@ RUN mkdir -p /app/logs
 # Copy supervisor configuration
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Create non-root user for security (optional)
-# RUN useradd --create-home --shell /bin/bash app
-# RUN chown -R app:app /app
-# USER app
-
 # Expose FastAPI port
 EXPOSE 8000
 
-# Start supervisor to manage both FastAPI and Celery
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Start with entrypoint script
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

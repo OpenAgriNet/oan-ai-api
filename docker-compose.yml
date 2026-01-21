@@ -1,71 +1,107 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: oan_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-oan}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - oan_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: oan_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - oan_network
+
   app:
-    container_name: oan_app
     build: .
+    container_name: oan_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8000:8000"
     expose:
       - "8000"
     volumes:
       - .:/app
-    env_file:
-      - .env  
-    restart: unless-stopped
-    networks:
-      - oannetwork
-    depends_on:
-      - postgres
-      - redis-stack
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: oan_postgres
     environment:
-      POSTGRES_USER: oan_user
-      POSTGRES_PASSWORD: oan_password
-      POSTGRES_DB: oan_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - oannetwork
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U oan_user -d oan_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-oan}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
 
-  redis-stack:
-    image: redis/redis-stack:latest
-    container_name: oan_redis
-    ports:
-      - "6379:6379"
-      - "8001:8001"  # RedisInsight
-    volumes:
-      - redis_data:/data
-    networks:
-      - oannetwork
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # API Keys
+      MEITY_API_KEY_VALUE: ${MEITY_API_KEY_VALUE}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      MAPBOX_API_TOKEN: ${MAPBOX_API_TOKEN}
+      OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY}
+
+      # LLM Configuration
+      LLM_PROVIDER: ${LLM_PROVIDER}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME}
+      INFERENCE_ENDPOINT_URL: ${INFERENCE_ENDPOINT_URL}
+      INFERENCE_API_KEY: ${INFERENCE_API_KEY}
+
+      # Vector DB (Marqo)
+      MARQO_ENDPOINT_URL: ${MARQO_ENDPOINT_URL}
+      MARQO_INDEX_NAME: ${MARQO_INDEX_NAME}
+
+      # BAP Configuration
+      BAP_ID: ${BAP_ID}
+      BAP_URI: ${BAP_URI}
+      BAP_ENDPOINT: ${BAP_ENDPOINT}
+
+      # Azure Configuration
+      azure_foundary_api_key: ${azure_foundary_api_key:-}
+      azure_foundary_region: ${azure_foundary_region:-}
+
+      # Nominatim Geocoding
+      NOMINATIM_DOMAIN: ${NOMINATIM_DOMAIN:-}
+      GEOCODING_COUNTRY_CODE: ${GEOCODING_COUNTRY_CODE:-et}
+
+      # Moderation
+      ENABLE_MODERATION: ${ENABLE_MODERATION:-false}
+    env_file:
+      - .env
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    networks:
+      - oan_network
+    entrypoint: /app/docker-entrypoint.sh
+
+networks:
+  oan_network:
+    driver: bridge
 
 volumes:
   postgres_data:
   redis_data:
-
-networks:
-  oannetwork:
-    driver: bridge
