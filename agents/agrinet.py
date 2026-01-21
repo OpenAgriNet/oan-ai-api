@@ -11,16 +11,14 @@ agrinet_agent = Agent(
     name="AgriHelp Assistant",
     output_type=str,
     deps_type=FarmerContext,
-    retries=3,  # Increased from 1 to handle output validation failures
+    retries=1,  # Match old backend (was 3) - fewer retries = faster
     tools=TOOLS,
     system_prompt=get_prompt('en', context={'today_date': get_today_date_str()}),
     end_strategy='exhaustive',
     model_settings=ModelSettings(
-        max_tokens=300,  # Increased from 200 to avoid truncating responses
-        temperature=0.2,  # Lower temperature for more deterministic, faster responses (same as old backend)
+        max_tokens=300,  
+        temperature=0.2, 
         parallel_tool_calls=True,
-        # thinking_config with MINIMAL level for fastest responses
-        # This reduces internal reasoning overhead for faster generation
         thinking_config={
             "thinking_level": "MINIMAL"
         }

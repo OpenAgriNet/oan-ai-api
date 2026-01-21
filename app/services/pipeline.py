@@ -18,6 +18,9 @@ from app.services.providers.tts import get_tts_provider
 from app.services.providers.vad import get_vad_provider
 from helpers.utils import get_logger, pcm_to_base64_wav
 
+from agents.agrinet import agrinet_agent
+from agents.deps import FarmerContext
+
 logger = get_logger(__name__)
 
 
@@ -28,14 +31,12 @@ class PipelineConfig:
     VAD_CHUNK_SIZE: int = 512  # 512 samples @ 16kHz = 32ms per chunk
     VAD_THRESHOLD: float = 0.5
 
-    # Adaptive silence detection - balances responsiveness vs natural pauses
-    # Short utterances (< 2s): Use shorter silence threshold (user likely done)
-    # Long utterances (> 2s): Use longer silence threshold (allow thinking pauses)
-    SILENCE_DURATION_SHORT: float = 0.5  # For short utterances (< 2s speech)
-    SILENCE_DURATION_LONG: float = 0.8   # For longer utterances (>= 2s speech)
-    SPEECH_DURATION_THRESHOLD: float = 2.0  # Threshold to switch between short/long
+   
+    SILENCE_DURATION_SHORT: float = 0.5  
+    SILENCE_DURATION_LONG: float = 0.8   
+    SPEECH_DURATION_THRESHOLD: float = 2.0  
     
-    MAX_SPEECH_DURATION: float = 60.0  # Maximum speech duration (60s) 
+    MAX_SPEECH_DURATION: float = 60.0  
     MIN_SPEECH_DURATION: float = 0.3   # Reduced from 0.5s - filter very short noise
 
     # Timeouts
@@ -297,21 +298,19 @@ class ConversationPipeline:
             "interruptions": 0,
             "errors": 0,
             "start_time": time.time(),
-            "asr_times": [],  # List of (turn_id, duration_seconds)
-            "llm_times": [],  # List of (turn_id, duration_seconds)
-            "tts_times": [],  # List of (turn_id, duration_seconds)
-            "turn_durations": [],  # List of (turn_id, total_duration_seconds)
-            "total_audio_received": 0,  # Total audio data received in bytes
-            "total_audio_sent": 0,  # Total audio data sent in bytes
+            "asr_times": [],  
+            "llm_times": [],  
+            "tts_times": [],  
+            "turn_durations": [],  
+            "total_audio_received": 0,  
+            "total_audio_sent": 0,  
         }
 
-        # Per-turn timing tracking
-        self.turn_timings = {}  # turn_id -> {start, speech_end, asr_start, asr_end, llm_start, llm_end, tts_start, tts_end, send_end}
+        
+        self.turn_timings = {}  
 
     async def run(self):
-        """Main entry point to run the pipeline"""
         try:
-            # Protected WebSocket accept
             await self.ws_manager.accept()
             logger.info(f"Pipeline started for {self.state.conversation_id} (lang={self.state.lang})")
 
@@ -325,7 +324,6 @@ class ConversationPipeline:
             ]
 
             try:
-                # Wait for any task to complete or fail
                 done, pending = await asyncio.wait(
                     tasks,
                     return_when=asyncio.FIRST_COMPLETED
@@ -489,9 +487,9 @@ class ConversationPipeline:
         buffer = AudioBuffer()
         processing_buffer = bytearray()
 
-        speech_accumulator = []  # List[np.ndarray]
+        speech_accumulator = []  
         silence_counter = 0
-        speech_chunk_counter = 0  # Track total speech duration 
+        speech_chunk_counter = 0  
         pending_speech_end = False
         pending_turn_id = None
 
@@ -1005,9 +1003,7 @@ class ConversationPipeline:
                     try:
                         # Use agent.run_stream for consistent caching and performance
                         # This matches text chat behavior and enables prompt caching
-                        from agents.agrinet import agrinet_agent as agent
-                        from agents.deps import FarmerContext
-                        from uuid import UUID
+                        # Agent and context imported at module level for performance
                         
                         # Create context for agent
                         context = FarmerContext(
@@ -1015,71 +1011,46 @@ class ConversationPipeline:
                             lang_code=self.state.lang,
                         )
                         
-                        # Instructions for natural, conversational responses with strong context awareness
-                        # Add explicit context reminder based on conversation history
-                        context_reminder = ""
-                        if history:
-                            # Extract any crop/livestock/market mentions from recent history
-                            recent_context = []
-                            for msg in history[-3:]:  # Last 3 messages
-                                if hasattr(msg, 'content'):
-                                    content = str(msg.content).lower()
-                                    # Check for crop mentions
-                                    crops = ['wheat', 'teff', 'maize', 'rice', 'barley', 'sorghum', 'banana', 'onion', 'tomato', 'potato']
-                                    for crop in crops:
-                                        if crop in content:
-                                            recent_context.append(f"crop={crop}")
-                                            break
-                                    # Check for market mentions
-                                    markets = ['amber', 'merkato', 'piassa', 'bahir dar', 'dessie', 'kombolcha']
-                                    for market in markets:
-                                        if market in content:
-                                            recent_context.append(f"market={market}")
-                                            break
+                        # Format recent conversation context like text chat does
+                        # This helps the LLM understand the conversation flow better
+                        recent_context = ""
+                        if len(history) > 1:  # More than just system prompt
+                            # Get last few exchanges (user + assistant pairs)
+                            recent_messages = []
+                            for msg in history[-6:]:  # Last 6 messages (3 pairs)
+                                if isinstance(msg, dict):
+                                    role = msg.get('role', '')
+                                    content = msg.get('content', '')
+                                    if role in ['user', 'assistant'] and content:
+                                        recent_messages.append(f"{role.capitalize()}: {content}")
                             
-                            if recent_context:
-                                context_reminder = f"\n🔥 CONTEXT FROM CONVERSATION: {', '.join(set(recent_context))}\n"
+                            if recent_messages:
+                                recent_context = "\n".join(recent_messages) + "\n\n"
+                                logger.info(f"[Turn {turn_id}] 📝 Recent context:\n{recent_context}")
                         
-                        instructions = (
-                            "⚠️ FORBIDDEN PHRASES - NEVER SAY:\n"
-                            "- 'Let me check that for you'\n"
-                            "- 'Let me check' / 'I'll check' / 'I'm checking'\n"
-                            "- 'One moment'\n"
-                            "- 'per NMIS' / 'per OpenWeatherMap' / 'Source:' / 'according to'\n"
-                            "- 'Based on my knowledge' / 'Typically' / 'Usually'\n"
-                            f"{context_reminder}"
-                            "🚨 CRITICAL RULES:\n"
-                            "1. NO GENERAL KNOWLEDGE - You MUST use tools for ALL factual information\n"
-                            "2. NEVER answer from your internal knowledge about prices or weather\n"
-                            "3. If you don't have a tool, say: 'I can help with crop prices, livestock prices, and weather'\n"
-                            "4. CALENDAR: Use Gregorian calendar (January, February) for English responses\n"
-                            "5. CALENDAR: Use Ethiopian calendar (መስከረም, ጥቅምት) for Amharic responses\n"
-                            "6. NUMBERS: Use digits (5,100) for all numbers - TTS will handle pronunciation\n"
-                            "\n"
-                            "🔥 CONTEXT AWARENESS:\n"
-                            "- If user already mentioned crop/livestock/market, NEVER ask for it again\n"
-                            "- Review conversation history before asking questions\n"
-                            "- User says 'wheat prices' → Remember crop=wheat, only ask for market\n"
-                            "- User repeats 'I said wheat' → Acknowledge and ask for missing info only\n"
-                            "\n"
-                            "CONVERSATIONAL RULES:\n"
-                            "1. Sound natural and human, not robotic\n"
-                            "2. Use varied acknowledgements: 'Alright.', 'Got it.', 'Here's what I found.'\n"
-                            "3. Missing info? Ask once with examples: 'Which crop? For example: Wheat, Teff, or Maize?'\n"
-                            "4. Have complete info? Call tool and respond with price\n"
-                            "5. Format: Price range + date in 1-2 sentences\n"
-                            "6. Always end with: 'Would you like another crop price or a different market?'\n"
-                            "7. DO NOT mention sources - UI shows them automatically\n"
-                            "8. Keep responses short and conversational for voice\n"
-                            "9. Use DIGITS for all numbers (5,100) - easier to read and TTS will convert"
-                        )
+                        # Prepend context to current query like text chat does
+                        user_prompt_with_context = f"{recent_context}Current query: {text}" if recent_context else text
                         
                         # Use agent's run_stream for proper caching
-                        stream_context = agent.run_stream(
-                            user_prompt=text,
+                        # Match text chat behavior - don't pass instructions, let system prompt handle it
+                        logger.info(f"[Turn {turn_id}] 🤖 Calling agent with:")
+                        logger.info(f"  - user_prompt: '{user_prompt_with_context[:100]}...'")
+                        logger.info(f"  - history length: {len(history)}")
+                        
+                        # Log last 3 messages from history for debugging
+                        for i, msg in enumerate(history[-3:]):
+                            if isinstance(msg, dict):
+                                role = msg.get('role', 'unknown')
+                                content = str(msg.get('content', ''))[:80]
+                                logger.info(f"    History[-{3-i}]: {role}: {content}...")
+                            else:
+                                logger.info(f"    History[-{3-i}]: {type(msg).__name__}")
+                        
+                        stream_context = agrinet_agent.run_stream(
+                            user_prompt=user_prompt_with_context,  # Include recent context in prompt
                             message_history=history,
                             deps=context,
-                            instructions=instructions,
+                            # NO instructions parameter - let system prompt handle everything
                         )
 
                         # Use async context manager for agent stream
@@ -1119,6 +1090,40 @@ class ConversationPipeline:
                                     break
 
                                 if chunk and isinstance(chunk, str):
+                                    # Handle intermediate message (LLM outputs this at start if calling tools)
+                                    if "[INTERMEDIATE:" in chunk:
+                                        logger.info(f"[Turn {turn_id}] 🔵 DETECTED [INTERMEDIATE:] in chunk: '{chunk}'")
+                                        # Extract intermediate message
+                                        start_idx = chunk.find("[INTERMEDIATE:")
+                                        end_idx = chunk.find("]", start_idx)
+                                        if end_idx > 0:
+                                            intermediate_msg = chunk[start_idx + 14:end_idx]  # Extract from [INTERMEDIATE:message]
+                                            logger.info(f"🔵 [Voice] LLM provided intermediate message: '{intermediate_msg}'")
+                                            
+                                            # Send as WebSocket message
+                                            await self.ws_manager.send_json({
+                                                "type": "intermediate",
+                                                "text": intermediate_msg,
+                                                "turn_id": turn_id
+                                            })
+                                            logger.info(f"🔵 [Voice] Sent intermediate WebSocket message")
+                                            
+                                            # Synthesize and send intermediate audio
+                                            try:
+                                                intermediate_audio = await self.tts_provider._synthesize_chunk(intermediate_msg, self.state.lang)
+                                                if intermediate_audio:
+                                                    await self.tts_queue.put((intermediate_audio, turn_id))
+                                                    logger.info(f"🔵 [Voice] Intermediate audio sent for turn {turn_id}")
+                                            except Exception as e:
+                                                logger.warning(f"Failed to synthesize intermediate audio: {e}")
+                                            
+                                            # Remove the marker from chunk and continue with rest
+                                            chunk = chunk[:start_idx] + chunk[end_idx + 1:]
+                                            logger.info(f"🔵 [Voice] Chunk after removing marker: '{chunk}'")
+                                            if not chunk.strip():
+                                                logger.info(f"🔵 [Voice] Chunk empty after removing marker, continuing to next chunk")
+                                                continue  # Skip if chunk is now empty after removing marker
+                                    
                                     # Handle status messages (show to user but don't send to TTS)
                                     if chunk.startswith("[STATUS:"):
                                         # Extract status message
@@ -1209,23 +1214,19 @@ class ConversationPipeline:
                         # Save history using agent's result (includes tool calls, etc.)
                         # This ensures proper history management and caching
                         if should_complete and collected_text:
+                            logger.info(f"[Turn {turn_id}] 💾 Attempting to save history...")
                             try:
-                                # stream_obj IS the result (StreamedRunResult)
-                                result = stream_obj
+
+                                await self.state.add_to_history("assistant", collected_text)
+                                logger.info(f"[Turn {turn_id}] ✅ Added assistant response to history: {collected_text[:80]}...")
                                 
+                                # Extract sources from result for tool calls
+                                result = stream_obj
                                 if result and hasattr(result, "new_messages"):
                                     new_messages = result.new_messages()
+                                    logger.info(f"[Turn {turn_id}] Checking {len(new_messages) if new_messages else 0} messages for tool calls")
+                                    
                                     if new_messages:
-                                        # Import history manager
-                                        from app.utils import get_message_history, update_message_history
-                                        
-                                        # Get current history and merge
-                                        current_history = await get_message_history(self.state.conversation_id)
-                                        all_messages = [*current_history, *new_messages]
-                                        await update_message_history(str(self.state.conversation_id), all_messages)
-                                        
-                                        logger.debug(f"Saved {len(new_messages)} new messages to history (total: {len(all_messages)})")
-                                        
                                         # Extract sources from tool calls in new messages
                                         logger.info(f"🔍 Extracting sources from {len(new_messages)} new messages")
                                         for i, msg in enumerate(new_messages):
@@ -1245,18 +1246,11 @@ class ConversationPipeline:
                                                             logger.warning(f"  ⚠️ Tool '{tool_name}' not in TOOL_SOURCE_MAP")
                                     else:
                                         logger.warning("⚠️ new_messages() returned empty list")
-                                else:
-                                    if not result:
-                                        logger.warning("⚠️ stream_obj.result() returned None")
-                                    elif not hasattr(result, "new_messages"):
-                                        logger.warning(f"⚠️ result has no new_messages method. Type: {type(result).__name__}")
-                                    # Fallback: just add user and assistant messages
-                                    await self.state.add_to_history("assistant", collected_text)
-                                    logger.debug("Used fallback history save (no agent result)")
                                     
                             except Exception as e:
                                 logger.error(f"Error saving history: {e}", exc_info=True)
                                 # Fallback to simple history
+                                await self.state.add_to_history("assistant", collected_text)
                                 await self.state.add_to_history("assistant", collected_text)
 
                             # Send sources to frontend if any were found
@@ -1535,8 +1529,6 @@ class ConversationPipeline:
                         except Exception as send_error:
                             logger.error(f"Failed to send TTS error notification: {send_error}")
 
-                        # Note: Cannot synthesize error message if TTS is broken
-                        # Client should handle this via JSON notification above
                     finally:
                         # Track TTS end time and duration
                         tts_end_time = time.time()
@@ -1545,8 +1537,6 @@ class ConversationPipeline:
                             self.turn_timings[turn_id]["tts_end"] = tts_end_time
                         self.metrics["tts_times"].append((turn_id, tts_duration))
                         logger.info(f"TTS synthesis completed for turn {turn_id} (took {tts_duration:.3f}s, {audio_chunks_sent} chunks)")
-
-                        # Safe cleanup with initialized variable
                         if stream is not None:
                             try:
                                 if hasattr(stream, 'aclose'):
@@ -1605,8 +1595,7 @@ class ConversationPipeline:
                         continue
 
                     try:
-                        # Mark that we're now playing audio back to user
-                        # This allows barge-in detection
+
                         await self.state.set_playing_audio(True)
                         
                         await self.ws_manager.send_bytes(audio_chunk)
@@ -1625,8 +1614,6 @@ class ConversationPipeline:
                         break
 
                 except asyncio.TimeoutError:
-                    # No audio to send - don't clear processing state here
-                    # Processing state is managed by LLM worker
                     continue
                 except asyncio.CancelledError:
                     raise

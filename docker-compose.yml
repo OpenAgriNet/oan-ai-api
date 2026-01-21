@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   app:
     container_name: oan_app
@@ -13,7 +15,57 @@ services:
     restart: unless-stopped
     networks:
       - oannetwork
-      
+    depends_on:
+      - postgres
+      - redis-stack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: oan_postgres
+    environment:
+      POSTGRES_USER: oan_user
+      POSTGRES_PASSWORD: oan_password
+      POSTGRES_DB: oan_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - oannetwork
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oan_user -d oan_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-stack:
+    image: redis/redis-stack:latest
+    container_name: oan_redis
+    ports:
+      - "6379:6379"
+      - "8001:8001"  # RedisInsight
+    volumes:
+      - redis_data:/data
+    networks:
+      - oannetwork
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+
 networks:
   oannetwork:
-    external: true
+    driver: bridge
