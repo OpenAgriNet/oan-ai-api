@@ -43,34 +43,44 @@ async def get_current_weather(input: CurrentWeatherInput) -> CurrentWeather:
     Always Add source as OpenWeatherMap in your response.
     Get the CURRENT weather conditions for a specific latitude and longitude.
     Use this tool ONLY when the user asks about the weather right now or current conditions."""    
-    async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-        response = await client.get(
-            CURRENT_WEATHER_URL,
-            params={
-                "lat": input.latitude,
-                "lon": input.longitude,
-                "appid": API_KEY,
-                "units": input.units,
-                "lang": input.language,
-            },
-        )
-        response.raise_for_status()
-        data = response.json()
-        logger.info(f"Fetched current weather for ({input.latitude}, {input.longitude}, units={input.units}, language={input.language})")
-        logger.info(f"Current weather data: {data}")
-        return CurrentWeather(
-            timestamp=data["dt"],
-            temperature=data["main"]["temp"],
-            feels_like=data["main"]["feels_like"],
-            humidity=data["main"]["humidity"],
-            pressure=data["main"]["pressure"],
-            wind_speed=data["wind"]["speed"],
-            wind_direction=data["wind"].get("deg", 0),
-            clouds=data["clouds"]["all"],
-            visibility=data.get("visibility", 10_000),
-            description=data["weather"][0]["description"],
-            source="OpenWeatherMap",
-        )
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.get(
+                CURRENT_WEATHER_URL,
+                params={
+                    "lat": input.latitude,
+                    "lon": input.longitude,
+                    "appid": API_KEY,
+                    "units": input.units,
+                    "lang": input.language,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            logger.info(f"Fetched current weather for ({input.latitude}, {input.longitude}, units={input.units}, language={input.language})")
+            logger.info(f"Current weather data: {data}")
+            return CurrentWeather(
+                timestamp=data["dt"],
+                temperature=data["main"]["temp"],
+                feels_like=data["main"]["feels_like"],
+                humidity=data["main"]["humidity"],
+                pressure=data["main"]["pressure"],
+                wind_speed=data["wind"]["speed"],
+                wind_direction=data["wind"].get("deg", 0),
+                clouds=data["clouds"]["all"],
+                visibility=data.get("visibility", 10_000),
+                description=data["weather"][0]["description"],
+                source="OpenWeatherMap",
+            )
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Weather API error: {e.response.status_code} - {e.response.text}")
+        raise Exception(f"Unable to fetch weather data: {e.response.status_code}")
+    except httpx.RequestError as e:
+        logger.error(f"Weather API request error: {e}")
+        raise Exception("Unable to connect to weather service")
+    except Exception as e:
+        logger.error(f"Unexpected error fetching weather: {e}")
+        raise
 
 
 
@@ -116,19 +126,29 @@ class WeatherForecast(BaseModel):
 async def get_weather_forecast(input: ForecastInput) -> WeatherForecast:
     """Get the WEATHER FORECAST (hourly and daily) for a location.
     Use this tool when the user asks about future weather, tomorrow, or the coming days."""
-    async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-        response = await client.get(
-            FORECAST_URL,
-            params={
-                "lat": input.latitude,
-                "lon": input.longitude,
-                "appid": API_KEY,
-                "units": input.units,
-                "lang": input.language,
-            },
-        )
-        response.raise_for_status()
-        data = response.json()
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            response = await client.get(
+                FORECAST_URL,
+                params={
+                    "lat": input.latitude,
+                    "lon": input.longitude,
+                    "appid": API_KEY,
+                    "units": input.units,
+                    "lang": input.language,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Weather forecast API error: {e.response.status_code} - {e.response.text}")
+        raise Exception(f"Unable to fetch weather forecast: {e.response.status_code}")
+    except httpx.RequestError as e:
+        logger.error(f"Weather forecast API request error: {e}")
+        raise Exception("Unable to connect to weather service")
+    except Exception as e:
+        logger.error(f"Unexpected error fetching forecast: {e}")
+        raise
 
     hourly = [
         HourlyForecast(
@@ -140,7 +160,7 @@ async def get_weather_forecast(input: ForecastInput) -> WeatherForecast:
             precipitation_probability=item.get("pop", 0.0),
             description=item["weather"][0]["description"],
         )
-        for item in data["list"][:16]  # next 48 hours
+        for item in data["list"][:16]  # next 48 hours (16 intervals × 3 hours each)
     ]
 
     daily_map: dict = {}

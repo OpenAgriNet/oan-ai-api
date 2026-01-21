@@ -139,7 +139,7 @@ async def list_crop_marketplaces_by_region(region: str) -> Union[List[Dict], str
         ]
 
 
-def find_nearest_crop_marketplaces(
+async def find_nearest_crop_marketplaces(
     user_lat: float,
     user_lon: float,
     region: str,
@@ -319,7 +319,7 @@ async def list_livestock_marketplaces_by_region(region: str) -> Union[List[Dict]
         ]
 
 
-def find_nearest_livestock_marketplaces(
+async def find_nearest_livestock_marketplaces(
     user_lat: float,
     user_lon: float,
     region: str,
