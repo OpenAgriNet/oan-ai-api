@@ -1,6 +1,7 @@
-
 from typing import AsyncGenerator
 import json
+import time
+import os
 from agents.agrinet import agrinet_agent
 from agents.moderation import moderation_agent
 from helpers.utils import get_logger
@@ -13,6 +14,7 @@ from app.utils import extract_sources_from_result
 from dotenv import load_dotenv
 from agents.deps import FarmerContext
 from helpers.utils import get_logger
+from pydantic_ai import UsageLimits
 
 load_dotenv()
 
@@ -27,9 +29,14 @@ async def stream_chat_messages(
     history: list,
 ) -> AsyncGenerator[str, None]:
     """Async generator for streaming chat messages."""
+    # ⏱️ START TIMING
+    pipeline_start = time.perf_counter()
+    
     # Generate a unique content ID for this query
     content_id = f"query_{session_id}_{len(history)//2 + 1}"
-       
+    
+    # ⏱️ STAGE 1: Context preparation
+    stage_start = time.perf_counter()
     deps = FarmerContext(
         query=query,
         lang_code=target_lang,
@@ -42,53 +49,77 @@ async def stream_chat_messages(
         last_response = ""
     
     user_message = f"{last_response}{deps.get_user_message()}"
-    moderation_run = await moderation_agent.run(user_message)
-    moderation_data = moderation_run.output
+    stage_time = (time.perf_counter() - stage_start) * 1000
+    logger.info(f"⏱️ [TIMING] Context preparation: {stage_time:.2f}ms")
     
-    deps.update_moderation_str(str(moderation_data))
+    # ⏱️ STAGE 2: Moderation (OPTIONAL - can be disabled for speed)
+    # NOTE: Old backend doesn't have moderation - this adds 3-4 seconds overhead
+    # Set ENABLE_MODERATION=false in .env to disable
+    enable_moderation = os.getenv("ENABLE_MODERATION", "false").lower() == "true"
+    
+    if enable_moderation:
+        stage_start = time.perf_counter()
+        moderation_run = await moderation_agent.run(user_message)
+        moderation_data = moderation_run.output
+        stage_time = (time.perf_counter() - stage_start) * 1000
+        logger.info(f"⏱️ [TIMING] Moderation agent: {stage_time:.2f}ms")
+        deps.update_moderation_str(str(moderation_data))
+    else:
+        logger.info(f"⏱️ [TIMING] Moderation agent: DISABLED (0ms)")
 
-    # Run the main agent
-    # async with agrinet_agent.run_stream(
-    #     user_prompt=deps.get_user_message(),
-    #     message_history=trim_history(
-    #         history,
-    #         max_tokens=60_000,
-    #         include_system_prompts=True,
-    #         include_tool_calls=True
-    #     ),
-    #     deps=deps,
-    # ) as response_stream:  # response_stream is a StreamedRunResult
-    #     previous_text = ""
-    #     response_stream.get_output()
-    #     async for chunk in response_stream.stream_output():
-    #         new_text = chunk[len(previous_text):]
-    #         if new_text:
-    #             yield new_text
-    #         previous_text = chunk
+    # ⏱️ STAGE 3: History trimming
+    stage_start = time.perf_counter()
+    trimmed_history = trim_history(
+        history,
+        max_tokens=60_000,
+        include_system_prompts=True,
+        include_tool_calls=True
+    )
+    stage_time = (time.perf_counter() - stage_start) * 1000
+    logger.info(f"⏱️ [TIMING] History trimming: {stage_time:.2f}ms")
 
+    # ⏱️ STAGE 4: Main agent execution
+    stage_start = time.perf_counter()
+    
+    # Use simple query like old backend (not formatted deps.get_user_message())
     response_stream = await agrinet_agent.run(
-            user_prompt=deps.get_user_message(),
-            message_history=trim_history(
-                history,
-                max_tokens=60_000,
-                include_system_prompts=True,
-                include_tool_calls=True
-            ),
+            user_prompt=query,  # Simple query, not deps.get_user_message()
+            message_history=trimmed_history,
             deps=deps,
+            usage_limits=UsageLimits(request_limit=200),
         )
-    yield response_stream.output
-    # Extract sources from tool calls
+    stage_time = (time.perf_counter() - stage_start) * 1000
+    logger.info(f"⏱️ [TIMING] Main agent execution: {stage_time:.2f}ms")
+    
+    # ⏱️ STAGE 5: Source extraction
+    stage_start = time.perf_counter()
     sources = extract_sources_from_result(response_stream)
+    stage_time = (time.perf_counter() - stage_start) * 1000
+    logger.info(f"⏱️ [TIMING] Source extraction: {stage_time:.2f}ms")
 
-    # Save messages to history
+    # ⏱️ STAGE 6: History update
+    stage_start = time.perf_counter()
     new_messages = response_stream.new_messages()
     messages = [
         *history,
         *new_messages
     ]
     await update_message_history(session_id, messages)
+    stage_time = (time.perf_counter() - stage_start) * 1000
+    logger.info(f"⏱️ [TIMING] History update: {stage_time:.2f}ms")
 
-    # Send sources as SSE metadata event (if any)
+    # ⏱️ TOTAL PIPELINE TIME
+    total_time = (time.perf_counter() - pipeline_start) * 1000
+    logger.info(f"⏱️ [TIMING] ═══ TOTAL PIPELINE: {total_time:.2f}ms ═══")
+
+    # Return complete response as JSON (not mixed format)
+    response_data = {
+        "response": response_stream.output,
+        "status": "success"
+    }
+    
+    # Add sources if available
     if sources:
-        metadata = json.dumps({"sources": sources})
-        yield f"event: metadata\ndata: {metadata}\n\n"
+        response_data["sources"] = sources
+    
+    yield json.dumps(response_data)

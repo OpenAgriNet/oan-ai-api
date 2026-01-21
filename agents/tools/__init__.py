@@ -44,8 +44,8 @@
 
 from agents.tools.maps import forward_geocode, reverse_geocode
 from agents.tools.weather_tool import get_current_weather, get_weather_forecast
-from agents.tools.crop import list_crops_in_marketplace, compare_crop_prices_nearby, get_crop_price_in_marketplace
-from agents.tools.Livestock import list_livestock_in_marketplace, compare_livestock_prices_nearby, get_livestock_price_in_marketplace
+from agents.tools.crop import list_crops_in_marketplace, compare_crop_prices_nearby, get_crop_price_in_marketplace, get_crop_price_quick
+from agents.tools.Livestock import list_livestock_in_marketplace, compare_livestock_prices_nearby, get_livestock_price_in_marketplace, get_livestock_price_quick
 from agents.tools.MarketPlace import (
     find_crop_marketplace_by_name,
     list_crop_marketplaces_by_region,
@@ -88,11 +88,13 @@ TOOLS = [
     Tool(find_nearest_livestock_marketplaces),
     
     # --- Crop tools ---
+    Tool(get_crop_price_quick),  # FAST PATH: Use this first for direct crop+marketplace queries
     Tool(list_crops_in_marketplace),
     Tool(get_crop_price_in_marketplace),
     Tool(compare_crop_prices_nearby),
     
     # --- Livestock tools ---
+    Tool(get_livestock_price_quick),  # FAST PATH: Use this first for direct livestock+marketplace queries
     Tool(list_livestock_in_marketplace),
     Tool(get_livestock_price_in_marketplace),
     Tool(compare_livestock_prices_nearby),
