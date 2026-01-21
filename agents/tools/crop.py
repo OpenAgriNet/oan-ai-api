@@ -117,9 +117,11 @@ async def get_crop_price_in_marketplace(
     region: Optional[str] = None
 ) -> str:
     """
-    Always use the list_crops_in_marketplace(marketplace_name) before using this Tool.
-    Get latest price information for a specific crop in a marketplace.
-
+    Get detailed price information for a specific crop in a marketplace.
+    
+    ⚠️ NOTE: Use get_crop_price_quick() instead for faster results.
+    Only use this tool if get_crop_price_quick() fails or you need to verify data.
+    
     Args:
         marketplace_name: Name of the marketplace
         crop_name: Name of the crop (e.g., "Teff", "Wheat", "Barley")
