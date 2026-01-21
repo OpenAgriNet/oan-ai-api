@@ -16,8 +16,6 @@ agrinet_agent = Agent(
     system_prompt=get_prompt('en', context={'today_date': get_today_date_str()}),
     end_strategy='exhaustive',
     model_settings=ModelSettings(
-        max_tokens=300,  
-        temperature=0.2, 
         parallel_tool_calls=True,
         thinking_config={
             "thinking_level": "MINIMAL"
