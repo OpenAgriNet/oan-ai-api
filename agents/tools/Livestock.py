@@ -256,3 +256,168 @@ async def compare_livestock_prices_nearby(
             )
 
         return "\n\n".join(lines)
+
+
+async def get_livestock_price_quick(
+    ctx: RunContext[FarmerContext],
+    livestock_type: str,
+    marketplace_name: str
+) -> str:
+    """
+    Get livestock price by marketplace name directly - no region needed. FAST VERSION.
+    
+    CRITICAL: Only call this tool if BOTH parameters are clearly specified by the user.
+    DO NOT call this tool if:
+    - User didn't mention a specific livestock type
+    - User didn't mention a specific marketplace name
+    - User said vague things like "the livestock" or "the price"
+    
+    If information is missing, ASK the user for it instead of calling this tool.
+    
+    Args:
+        livestock_type: REQUIRED - Specific livestock type (e.g., "Cattle", "Goat", "Sheep", "Oxen")
+                       Must be explicitly mentioned by user, not assumed.
+        marketplace_name: REQUIRED - Specific marketplace name (e.g., "Dubti", "Bati", "Semera")
+                         Must be explicitly mentioned by user, not assumed.
+    
+    Returns:
+        Price information or error message if marketplace/livestock not found
+    """
+    logger.info(f"get_livestock_price_quick: livestock={livestock_type}, marketplace={marketplace_name}")
+    
+    # Validate parameters - check for vague/generic inputs
+    vague_terms = ['livestock', 'animal', 'it', 'that', 'this', 'something', 'anything', 'price', 'market', 'the market']
+    
+    livestock_lower = livestock_type.lower().strip()
+    market_lower = marketplace_name.lower().strip()
+    
+    if livestock_lower in vague_terms or len(livestock_lower) < 3:
+        return "ERROR: I need to know which specific livestock type you're asking about. Please tell me the livestock type (e.g., cattle, goat, sheep, oxen)."
+    
+    if market_lower in vague_terms or len(market_lower) < 3:
+        return "ERROR: I need to know which specific marketplace you're asking about. Please tell me the marketplace name (e.g., Dubti, Bati, Semera)."
+    
+    # Normalize livestock type - handle common plural/singular variations
+    livestock_normalized = livestock_lower
+    plural_to_singular = {
+        'oxen': 'ox',
+        'cattle': 'cow',  # Cattle often refers to cows in the database
+        'sheep': 'sheep',  # Already singular/plural same
+        'goats': 'goat',
+        'camels': 'camel',
+        'calves': 'calf',
+        'cows': 'cow',
+    }
+    
+    # Try to normalize to singular form for better matching
+    if livestock_normalized in plural_to_singular:
+        livestock_normalized = plural_to_singular[livestock_normalized]
+        logger.info(f"Normalized '{livestock_type}' to '{livestock_normalized}' for better matching")
+    
+    # Import here to avoid circular imports
+    from helpers.market_place_json import EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES
+    
+    # Find marketplace with case-insensitive and fuzzy matching
+    marketplace_info = None
+    name_lower = marketplace_name.lower().strip()
+    clean_name = name_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+    
+    # Try exact match first
+    marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.get(marketplace_name)
+    
+    # If not found, try case-insensitive exact match
+    if not marketplace_info:
+        for key, value in EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.items():
+            key_lower = key.lower()
+            key_clean = key_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+            
+            # Exact match (case-insensitive)
+            if key_lower == name_lower or key_clean == clean_name:
+                marketplace_info = value
+                marketplace_name = key  # Use the correct case
+                break
+    
+    # If still not found, try partial matching (e.g., "Dubti" matches "Dubti Market")
+    if not marketplace_info:
+        for key, value in EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.items():
+            key_lower = key.lower()
+            key_clean = key_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+            
+            # Check if the search term is contained in the marketplace name
+            # or if the marketplace name starts with the search term
+            if (clean_name in key_clean or key_clean.startswith(clean_name) or 
+                clean_name.startswith(key_clean)):
+                marketplace_info = value
+                marketplace_name = key  # Use the correct case
+                logger.info(f"Fuzzy matched '{marketplace_name}' to '{key}'")
+                break
+    
+    if not marketplace_info:
+        logger.info(f"get_livestock_price_quick: marketplace not found")
+        return f"Livestock marketplace '{marketplace_name}' not found. Please check the marketplace name."
+    
+    region = marketplace_info.get("region")
+    
+    async with async_session_maker() as db:
+        # Get marketplace using the helper function
+        marketplace, error = await _get_marketplace(db, marketplace_name, region)
+        logger.debug(f"Getting marketplace: region={region}, marketplace={marketplace_name}")
+        
+        if error:
+            logger.info(f"get_livestock_price_quick: {error}")
+            return f"Marketplace '{marketplace_name}' not found in database."
+
+        # Get price info - use normalized livestock name for better matching
+        stmt = (
+            select(
+                MarketPrice.min_price,
+                MarketPrice.max_price,
+                MarketPrice.avg_price,
+                MarketPrice.modal_price,
+                MarketPrice.price_date,
+                MarketPrice.unit,
+                Livestock.name_amharic.label('livestock_name_amharic'),
+                Livestock.name.label('livestock_name'),
+                LivestockBreed.name.label('breed_name'),
+                LivestockBreed.name_amharic.label('breed_name_amharic')
+            )
+            .join(Livestock, MarketPrice.livestock_id == Livestock.livestock_id)
+            .outerjoin(LivestockBreed, MarketPrice.breed_id == LivestockBreed.breed_id)
+            .where(
+                MarketPrice.marketplace_id == marketplace.marketplace_id,
+                or_(
+                    func.lower(Livestock.name) == livestock_normalized,
+                    func.lower(Livestock.name).contains(livestock_normalized),
+                    func.lower(Livestock.name_amharic) == livestock_normalized,
+                    func.lower(Livestock.name_amharic).contains(livestock_normalized)
+                ),
+                MarketPrice.price_date >= (func.current_date() - 364)
+            )
+            .order_by(MarketPrice.price_date.desc())
+        )
+        result = await db.execute(stmt)
+        price_data_list = result.all()
+
+        if not price_data_list:
+            logger.info(f"get_livestock_price_quick: no price data")
+            return f"No price data found for '{livestock_type}' in {marketplace_name} ({region})."
+
+        price_data_breeds = {}
+        for price_row in price_data_list:
+            breed_key = price_row.breed_name or "Default"
+            price_data_breeds[breed_key] = (
+                f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
+                f"* Breed: {price_row.breed_name or 'N/A'}" +
+                (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
+                f"* Min Price: {price_row.min_price} ETB/{price_row.unit or 'Head'}\n"
+                f"* Max Price: {price_row.max_price} ETB/{price_row.unit or 'Head'}\n"
+                f"* Avg Price: {price_row.avg_price} ETB/{price_row.unit or 'Head'}\n"
+                f"* Modal Price: {price_row.modal_price} ETB/{price_row.unit or 'Head'}\n"
+                f"* Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                f"* Source: https://nmis.et/"
+            )
+        
+        logger.info(f"get_livestock_price_quick: found {len(price_data_breeds)} breeds")
+        
+        # Format response
+        return "\n\n".join(price_data_breeds.values())

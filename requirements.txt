@@ -39,6 +39,7 @@ cryptography
 
 # Language and Localization
 langcodes
+language-data
 
 # File Processing
 openpyxl
