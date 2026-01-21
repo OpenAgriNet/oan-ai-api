@@ -92,12 +92,24 @@ class Settings(BaseSettings):
     llm_provider: Optional[str] = None
     llm_model_name: Optional[str] = None
     marqo_index_name: Optional[str] = None
-    
+
     # Azure Configuration
     azure_foundary_api_key: Optional[str] = None
     azure_foundary_region: Optional[str] = None
+
+    # RAG Configuration
+    rag_provider: str = os.getenv("RAG_PROVIDER", "marqo")  # "marqo" or "cosdata"
+
+    # Cosdata Configuration
+    cosdata_endpoint_url: Optional[str] = os.getenv("COSDATA_ENDPOINT_URL")
+    cosdata_api_key: Optional[str] = os.getenv("COSDATA_API_KEY")
+    cosdata_collection_name: str = os.getenv("COSDATA_COLLECTION_NAME", "oan-collection")
+
+    # Embedding Configuration (for Cosdata - uses sentence-transformers locally)
+    embedding_model_name: str = os.getenv("EMBEDDING_MODEL_NAME", "intfloat/multilingual-e5-large")
+
     class Config:
         env_file = ".env"
         extra = 'ignore'  # Ignore extra fields from .env
 
-settings = Settings() 
+settings = Settings()

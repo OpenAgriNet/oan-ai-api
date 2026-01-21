@@ -1,51 +1,22 @@
-# """
-# Tools for the OAN AI API.
-# """
-# from agents.tools.search import search_documents
-# from agents.tools.weather import weather_forecast
-# from agents.tools.mandi import mandi_prices
-# from agents.tools.warehouse import warehouse_data
-# from agents.tools.maps import forward_geocode  
-# from pydantic_ai import Tool
-# from agents.tools.terms import search_terms
-# from agents.tools.scheme import get_scheme_info
+"""
+Tools for the OAN AI API.
+"""
+# RAG tool (routes to Marqo or Cosdata based on config)
+from agents.tools.rag_router import search_documents
 
-# TOOLS = [
-#     Tool(
-#         search_terms,
-#         takes_ctx=False,
-#     ),
-#     Tool(
-#         search_documents,
-#         takes_ctx=False, # No context is needed for this tool
-#     ),
-#     Tool(
-#         weather_forecast,
-#         takes_ctx=False,
-#     ),
-#     Tool(
-#         mandi_prices,
-#         takes_ctx=False,
-#     ),
-#     Tool(
-#         warehouse_data,
-#         takes_ctx=False,
-#     ),
-#     Tool(
-#         forward_geocode,
-#         takes_ctx=False,
-#     ),
-#     Tool(
-#         get_scheme_info,
-#         takes_ctx=False,
-#     ),
-# ]
-
-
+# Geolocation tools
 from agents.tools.maps import forward_geocode, reverse_geocode
+
+# Weather tools
 from agents.tools.weather_tool import get_current_weather, get_weather_forecast
+
+# Crop tools
 from agents.tools.crop import list_crops_in_marketplace, compare_crop_prices_nearby, get_crop_price_in_marketplace, get_crop_price_quick
+
+# Livestock tools
 from agents.tools.Livestock import list_livestock_in_marketplace, compare_livestock_prices_nearby, get_livestock_price_in_marketplace, get_livestock_price_quick
+
+# Marketplace tools
 from agents.tools.MarketPlace import (
     find_crop_marketplace_by_name,
     list_crop_marketplaces_by_region,
@@ -56,21 +27,30 @@ from agents.tools.MarketPlace import (
     find_nearest_livestock_marketplaces,
     list_active_livestock_marketplaces
 )
+
+# Region tools
 from agents.tools.Regions import detect_crop_region, detect_livestock_region
 
+# Other tools
+from agents.tools.terms import search_terms
+from agents.tools.scheme import get_scheme_info
 
 from pydantic_ai import Tool
 
-# Tool list for agent registration
 TOOLS = [
+    # --- RAG/Search tools ---
+    Tool(search_documents),  # Routes to Marqo or Cosdata based on RAG_PROVIDER
+    Tool(search_terms),
+    Tool(get_scheme_info),
+
     # --- Weather tools ---
     Tool(get_current_weather),
     Tool(get_weather_forecast),
-    
-    # --- geolocation tools ---
+
+    # --- Geolocation tools ---
     Tool(forward_geocode),
     Tool(reverse_geocode),
-    
+
     # --- Region tools ---
     Tool(detect_crop_region),
     Tool(detect_livestock_region),
@@ -86,13 +66,13 @@ TOOLS = [
     Tool(list_livestock_marketplaces_by_region),
     Tool(find_livestock_marketplace_by_name),
     Tool(find_nearest_livestock_marketplaces),
-    
+
     # --- Crop tools ---
     Tool(get_crop_price_quick),  # FAST PATH: Use this first for direct crop+marketplace queries
     Tool(list_crops_in_marketplace),
     Tool(get_crop_price_in_marketplace),
     Tool(compare_crop_prices_nearby),
-    
+
     # --- Livestock tools ---
     Tool(get_livestock_price_quick),  # FAST PATH: Use this first for direct livestock+marketplace queries
     Tool(list_livestock_in_marketplace),
