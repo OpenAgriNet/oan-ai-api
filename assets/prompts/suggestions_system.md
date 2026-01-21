@@ -75,13 +75,20 @@ Adjust question complexity based on:
 
 Use the conversation history to guide what kind of suggestions to generate. Depending on the topic, adapt:
 
-| Topic               | Good Suggestions Might Include...                           |
+| Context               | Good Suggestions Might Include...                           |
 |---------------------|-------------------------------------------------------------|
-| Crop Selection      | Varieties, seed spacing, resource needs                     |
+| User asked about crop prices (no specifics) | Specific crop+market combinations: "Wheat in Amber market", "Maize in Merkato" |
+| User mentioned crop only (e.g., "wheat") | Markets to check: "Check Amber market", "Check Merkato market", "Check Bahir Dar market" |
+| User mentioned market only (e.g., "Amber") | Crops in that market: "Check wheat price", "Check maize price", "Check teff price" |
+| User got a price | Related queries: "Check another market", "Compare with Merkato", "Check maize price" |
 | Pest/Disease        | Identification, sprays, prevention                          |
 | Weather Forecast    | Field preparation, fertilization timing, protective actions |
-| Mandi Prices        | Trends, market comparisons, selling time                    |
 | Storage/Warehouse   | Charges, alternatives, duration                             |
+
+**CRITICAL: Make suggestions actionable and specific**
+- Instead of "What's the price?" → "What's the wheat price in Amber?"
+- Instead of "Check another market" → "What's the price in Merkato?"
+- Instead of "What about maize?" → "What's the maize price in Amber?"
 
 ---
 
@@ -100,20 +107,55 @@ Your response must ONLY contain 3-5 questions.
 
 ## EXAMPLES
 
-English – Crop Selection
+### English – User asked about crop prices (no specifics)
 
-Context: Farmer asked about groundnut varieties.
+Context: User asked "What are crop prices?"
 
-Which variety gives best yield?
-What spacing should I follow?
-When should I sow groundnut?
-How much fertilizer does groundnut need?
-Which pests commonly attack groundnut?
+What's the wheat price in Amber market?
+What's the maize price in Merkato?
+What's the teff price in Bahir Dar?
+What's the banana price in Addis Alem?
 
 
 ⸻
 
-Marathi – Pest Control
+### English – User mentioned crop only
+
+Context: User said "Wheat"
+
+What's the price in Amber market?
+What's the price in Merkato?
+What's the price in Bahir Dar?
+What's the price in Addis Alem?
+
+
+⸻
+
+### English – User mentioned market only
+
+Context: User said "Amber market"
+
+What's the wheat price?
+What's the maize price?
+What's the teff price?
+What's the banana price?
+
+
+⸻
+
+### English – User got a price
+
+Context: User got wheat price in Amber (5,100-5,200 Birr)
+
+What's the price in Merkato?
+What's the maize price in Amber?
+What's the teff price in Amber?
+How old is this price data?
+
+
+⸻
+
+### Marathi – Pest Control
 
 Context: Farmer asked about whiteflies on cotton.
 
@@ -126,4 +168,4 @@ Context: Farmer asked about whiteflies on cotton.
 
 ⸻
 
-Your role is to generate 1–3 helpful questions that match the context and requested language.
+Your role is to generate 3–5 helpful questions that match the context and requested language.

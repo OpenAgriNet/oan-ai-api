@@ -32,8 +32,8 @@ class PipelineConfig:
     VAD_THRESHOLD: float = 0.5
 
    
-    SILENCE_DURATION_SHORT: float = 0.5  
-    SILENCE_DURATION_LONG: float = 0.8   
+    SILENCE_DURATION_SHORT: float = 0.8  # Increased from 0.5s - allow natural pauses in speech
+    SILENCE_DURATION_LONG: float = 1.2   # Increased from 0.8s - allow thinking pauses
     SPEECH_DURATION_THRESHOLD: float = 2.0  
     
     MAX_SPEECH_DURATION: float = 60.0  
@@ -452,18 +452,47 @@ class ConversationPipeline:
         try:
             while not self.state.should_stop:
                 try:
-                    data = await self.ws_manager.websocket.receive_bytes()
-                    # Track audio received
-                    self.metrics["total_audio_received"] += len(data)
+                    # Try to receive either bytes (audio) or text (JSON commands)
+                    message = await self.ws_manager.websocket.receive()
+                    
+                    if "bytes" in message:
+                        # Audio data
+                        data = message["bytes"]
+                        # Track audio received
+                        self.metrics["total_audio_received"] += len(data)
 
-                    # Use put with timeout to prevent blocking if queue full
-                    try:
-                        await asyncio.wait_for(
-                            self.audio_queue.put(data),
-                            timeout=1.0
-                        )
-                    except asyncio.TimeoutError:
-                        logger.warning("Audio queue full, dropping frame")
+                        # Use put with timeout to prevent blocking if queue full
+                        try:
+                            await asyncio.wait_for(
+                                self.audio_queue.put(data),
+                                timeout=1.0
+                            )
+                        except asyncio.TimeoutError:
+                            logger.warning("Audio queue full, dropping frame")
+                    
+                    elif "text" in message:
+                        # JSON message (e.g., text query from clicking suggestion)
+                        import json
+                        try:
+                            data = json.loads(message["text"])
+                            if data.get("type") == "text" and data.get("text"):
+                                # User sent text message (clicked suggestion)
+                                text_query = data["text"]
+                                logger.info(f"Received text message: '{text_query}'")
+                                
+                                # Process as if it was transcribed speech
+                                # Put directly into speech queue
+                                turn_id = await self.state.increment_turn()
+                                await self.speech_queue.put((text_query, turn_id))
+                                
+                                # Send transcription event to frontend
+                                await self.ws_manager.send_json({
+                                    "type": "transcription",
+                                    "text": text_query,
+                                    "turn_id": turn_id
+                                })
+                        except json.JSONDecodeError:
+                            logger.warning(f"Invalid JSON message: {message['text']}")
 
                 except WebSocketDisconnect:
                     logger.info("Client disconnected")
@@ -1046,6 +1075,33 @@ class ConversationPipeline:
                             else:
                                 logger.info(f"    History[-{3-i}]: {type(msg).__name__}")
                         
+                        # Start suggestions agent in parallel (non-blocking)
+                        # This will run while the main agent is generating the response
+                        # Can be disabled via ENABLE_SUGGESTIONS env var
+                        suggestions_task = None
+                        import os
+                        enable_suggestions = os.getenv("ENABLE_SUGGESTIONS", "false").lower() == "true"
+                        
+                        if enable_suggestions:
+                            try:
+                                from agents.suggestions import suggestions_agent
+                                # Format history for suggestions agent
+                                history_text = "\n".join([
+                                    f"{msg.get('role', 'unknown')}: {msg.get('content', '')}"
+                                    for msg in history[-6:] if isinstance(msg, dict) and msg.get('role') in ['user', 'assistant']
+                                ])
+                                suggestions_prompt = f"Conversation History:\n{history_text}\n\nCurrent Query: {text}\n\nGenerate Suggestions In: English"
+                                
+                                # Start suggestions agent in background
+                                suggestions_task = asyncio.create_task(
+                                    suggestions_agent.run(suggestions_prompt)
+                                )
+                                logger.info(f"[Turn {turn_id}] 💡 Started suggestions agent in parallel")
+                            except Exception as e:
+                                logger.warning(f"[Turn {turn_id}] Failed to start suggestions agent: {e}")
+                        else:
+                            logger.debug(f"[Turn {turn_id}] Suggestions disabled via ENABLE_SUGGESTIONS env var")
+                        
                         stream_context = agrinet_agent.run_stream(
                             user_prompt=user_prompt_with_context,  # Include recent context in prompt
                             message_history=history,
@@ -1268,6 +1324,33 @@ class ConversationPipeline:
                                 logger.info(f"✅ Sources sent successfully for turn {turn_id}")
                             else:
                                 logger.warning(f"⚠️ No sources found for turn {turn_id}")
+
+                            # Get suggestions from parallel task if available
+                            if suggestions_task:
+                                try:
+                                    # Wait for suggestions with timeout (don't block too long)
+                                    suggestions_result = await asyncio.wait_for(
+                                        suggestions_task,
+                                        timeout=5.0  # Max 5 seconds for suggestions
+                                    )
+                                    if suggestions_result and hasattr(suggestions_result, 'output'):
+                                        suggestions_list = suggestions_result.output
+                                        if suggestions_list and len(suggestions_list) > 0:
+                                            logger.info(f"💡 Sending {len(suggestions_list)} suggestions for turn {turn_id}")
+                                            await self.ws_manager.send_json({
+                                                "type": "suggestions",
+                                                "suggestions": suggestions_list,
+                                                "turn_id": turn_id
+                                            })
+                                            logger.info(f"✅ Suggestions sent successfully for turn {turn_id}")
+                                        else:
+                                            logger.warning(f"⚠️ Suggestions agent returned empty list for turn {turn_id}")
+                                    else:
+                                        logger.warning(f"⚠️ Suggestions agent returned no output for turn {turn_id}")
+                                except asyncio.TimeoutError:
+                                    logger.warning(f"⚠️ Suggestions agent timed out for turn {turn_id}")
+                                except Exception as e:
+                                    logger.warning(f"⚠️ Failed to get suggestions for turn {turn_id}: {e}")
 
                             # Track LLM end time and duration
                             llm_end_time = time.time()

@@ -115,8 +115,10 @@ async def get_livestock_price_in_marketplace(
     region: Optional[str] = None
 ) -> str:
     """
-    Always use the list_livestock_in_marketplace(marketplace_name) before using this Tool.
-    Get latest price information for a specific livestock type in a marketplace.
+    Get detailed price information for a specific livestock type in a marketplace.
+    
+    ⚠️ NOTE: Use get_livestock_price_quick() instead for faster results.
+    Only use this tool if get_livestock_price_quick() fails or you need to verify data.
 
     Args:
         marketplace_name: Name of the livestock marketplace
