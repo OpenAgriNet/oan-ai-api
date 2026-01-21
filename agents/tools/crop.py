@@ -260,3 +260,148 @@ async def compare_crop_prices_nearby(
             )
 
         return "\n\n".join(lines)
+
+
+async def get_crop_price_quick(
+    ctx: RunContext[FarmerContext],
+    crop_name: str,
+    marketplace_name: str
+) -> str:
+    """
+    Get crop price by marketplace name directly - no region needed. FAST VERSION.
+    
+    CRITICAL: Only call this tool if BOTH parameters are clearly specified by the user.
+    DO NOT call this tool if:
+    - User didn't mention a specific crop name
+    - User didn't mention a specific marketplace name
+    - User said vague things like "the crop" or "the price"
+    
+    If information is missing, ASK the user for it instead of calling this tool.
+    
+    Args:
+        crop_name: REQUIRED - Specific crop name (e.g., "Wheat", "Teff", "Barley")
+                   Must be explicitly mentioned by user, not assumed.
+        marketplace_name: REQUIRED - Specific marketplace name (e.g., "Amber", "Merkato")
+                         Must be explicitly mentioned by user, not assumed.
+    
+    Returns:
+        Price information or error message if marketplace/crop not found
+    """
+    logger.info(f"get_crop_price_quick: crop={crop_name}, marketplace={marketplace_name}")
+    
+    # Validate parameters - check for vague/generic inputs
+    vague_terms = ['crop', 'the crop', 'it', 'that', 'this', 'something', 'anything', 'price', 'market', 'the market']
+    
+    crop_lower = crop_name.lower().strip()
+    market_lower = marketplace_name.lower().strip()
+    
+    if crop_lower in vague_terms or len(crop_lower) < 3:
+        return "ERROR: I need to know which specific crop you're asking about. Please tell me the crop name (e.g., wheat, teff, barley)."
+    
+    if market_lower in vague_terms or len(market_lower) < 3:
+        return "ERROR: I need to know which specific marketplace you're asking about. Please tell me the marketplace name (e.g., Amber, Merkato, Piassa)."
+    
+    # Import here to avoid circular imports
+    from helpers.market_place_json import EXACT_MATCH_UP_MARKETPLACES
+    
+    # Find marketplace with case-insensitive and fuzzy matching
+    marketplace_info = None
+    name_lower = marketplace_name.lower().strip()
+    clean_name = name_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+    
+    # Try exact match first
+    marketplace_info = EXACT_MATCH_UP_MARKETPLACES.get(marketplace_name)
+    
+    # If not found, try case-insensitive exact match
+    if not marketplace_info:
+        for key, value in EXACT_MATCH_UP_MARKETPLACES.items():
+            key_lower = key.lower()
+            key_clean = key_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+            
+            # Exact match (case-insensitive)
+            if key_lower == name_lower or key_clean == clean_name:
+                marketplace_info = value
+                marketplace_name = key  # Use the correct case
+                break
+    
+    # If still not found, try partial matching (e.g., "Adama" matches "Adama City")
+    if not marketplace_info:
+        for key, value in EXACT_MATCH_UP_MARKETPLACES.items():
+            key_lower = key.lower()
+            key_clean = key_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+            
+            # Check if the search term is contained in the marketplace name
+            # or if the marketplace name starts with the search term
+            if (clean_name in key_clean or key_clean.startswith(clean_name) or 
+                clean_name.startswith(key_clean)):
+                marketplace_info = value
+                marketplace_name = key  # Use the correct case
+                logger.info(f"Fuzzy matched '{marketplace_name}' to '{key}'")
+                break
+    
+    if not marketplace_info:
+        logger.info(f"get_crop_price_quick: marketplace not found - marketplace_info is None")
+        return f"Marketplace '{marketplace_name}' not found. Please check the marketplace name."
+    
+    region = marketplace_info.get("region")
+    
+    async with async_session_maker() as db:
+        # Get marketplace using the helper function
+        marketplace, error = await _get_marketplace(db, marketplace_name, region)
+        if error:
+            logger.info(f"get_crop_price_quick: {error}")
+            return f"Marketplace '{marketplace_name}' not found in database."
+
+        # Get price info
+        stmt = (
+            select(
+                MarketPrice.min_price,
+                MarketPrice.max_price,
+                MarketPrice.avg_price,
+                MarketPrice.modal_price,
+                MarketPrice.price_date,
+                MarketPrice.unit,
+                Crop.name_amharic.label('crop_name_amharic'),
+                Crop.name.label('crop_name'),
+                CropVariety.name.label('variety_name'),
+                CropVariety.name_amharic.label('variety_name_amharic')
+            )
+            .join(Crop, MarketPrice.crop_id == Crop.crop_id)
+            .outerjoin(CropVariety, MarketPrice.variety_id == CropVariety.variety_id)
+            .where(
+                MarketPrice.marketplace_id == marketplace.marketplace_id,
+                or_(
+                    func.lower(Crop.name) == crop_name.lower(),
+                    func.lower(Crop.name).contains(crop_name.lower()),
+                    func.lower(Crop.name_amharic) == crop_name.lower(),
+                    func.lower(Crop.name_amharic).contains(crop_name.lower())
+                ),
+                MarketPrice.price_date >= (func.current_date() - 364),
+                Crop.category == "agricultural"
+            )
+            .order_by(MarketPrice.price_date.desc())
+        )
+        result = await db.execute(stmt)
+        price_data_list = result.all()
+
+        if not price_data_list:
+            logger.info(f"get_crop_price_quick: no price data")
+            return f"No price data found for '{crop_name}' in {marketplace_name} ({region})."
+
+        price_data_varieties = {}
+        for price_row in price_data_list:
+            variety_key = price_row.variety_name or "Default"
+            price_data_varieties[variety_key] = (
+                f"{price_row.crop_name} ({price_row.crop_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
+                f"* Variety: {price_row.variety_name or 'N/A'}" +
+                (f" ({price_row.variety_name_amharic})" if price_row.variety_name_amharic else "") + "\n"
+                f"* Min Price: {price_row.min_price} ETB/{price_row.unit or 'unit'}\n"
+                f"* Max Price: {price_row.max_price} ETB/{price_row.unit or 'unit'}\n"
+                f"* Avg Price: {price_row.avg_price} ETB/{price_row.unit or 'unit'}\n"
+                f"* Modal Price: {price_row.modal_price} ETB/{price_row.unit or 'unit'}\n"
+                f"* Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                f"* Source: https://nmis.et/"
+            )
+        
+        logger.info(f"get_crop_price_quick: found {len(price_data_varieties)} varieties")
+        return "\n\n".join(price_data_varieties.values())

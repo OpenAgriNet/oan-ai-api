@@ -1,6 +1,7 @@
 import os
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.models.gemini import GeminiModel
+from pydantic_ai.models.google import GoogleModel  # Direct Google API model (faster)
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.providers.google_gla import GoogleGLAProvider
 from dotenv import load_dotenv
@@ -19,11 +20,11 @@ logger.info(f"LLM_MODEL_NAME loaded: '{LLM_MODEL_NAME}'")
 
 # Configure the model based on provider
 if LLM_PROVIDER == 'gemini':
-    LLM_MODEL = GeminiModel(
-        LLM_MODEL_NAME,
-        provider=GoogleGLAProvider(
-            api_key=os.getenv('GEMINI_API_KEY'),
-        )
+    # Use direct GoogleModel for optimal performance (same as old backend)
+    # This automatically uses GEMINI_API_KEY environment variable
+    LLM_MODEL = GoogleModel(
+        model_name=LLM_MODEL_NAME,
+        # api_key will be read from GEMINI_API_KEY environment variable
     )
 elif LLM_PROVIDER == 'vllm':
     LLM_MODEL = OpenAIModel(
