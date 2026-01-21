@@ -13,7 +13,6 @@ from app.utils import (
 from app.utils import extract_sources_from_result
 from dotenv import load_dotenv
 from agents.deps import FarmerContext
-from helpers.utils import get_logger
 from pydantic_ai import UsageLimits
 
 load_dotenv()
@@ -111,7 +110,7 @@ async def stream_chat_messages(
     # ⏱️ TOTAL PIPELINE TIME
     total_time = (time.perf_counter() - pipeline_start) * 1000
     logger.info(f"⏱️ [TIMING] ═══ TOTAL PIPELINE: {total_time:.2f}ms ═══")
-
+    
     # Return complete response as JSON (not mixed format)
     response_data = {
         "response": response_stream.output,
