@@ -144,7 +144,7 @@ class AzureTranscriptionProvider(TranscriptionProvider):
         Transcribe audio using Azure Speech-to-Text
         
         Args:
-            audio_content: Base64 encoded audio string (PCM format supported)
+            audio_content: Base64 encoded audio string (WAV format with header)
             lang: Language code (e.g., "en-US", "es-ES")
 
         Returns:
@@ -166,12 +166,29 @@ class AzureTranscriptionProvider(TranscriptionProvider):
             self.speech_config.speech_recognition_language = azure_lang
 
             # Check if audio is WAV format (has RIFF header)
-            # WAV files start with 'RIFF' magic number
             if audio_bytes[:4] == b'RIFF':
+                # Extract PCM data from WAV file
+                # WAV format: RIFF header (12 bytes) + fmt chunk (24 bytes) + data chunk header (8 bytes) = 44 bytes
+                logger.debug(f"Detected WAV format, audio size: {len(audio_bytes)} bytes")
+                
+                # Verify it's a valid WAV file
+                if len(audio_bytes) < 44:
+                    logger.error(f"WAV file too short: {len(audio_bytes)} bytes")
+                    return ""
+                
                 # Skip WAV header (44 bytes) to get raw PCM data
-                # Azure PushAudioInputStream expects raw PCM, not WAV
-                logger.debug("Detected WAV format, skipping 44-byte header")
-                audio_bytes = audio_bytes[44:]
+                pcm_data = audio_bytes[44:]
+                logger.debug(f"Extracted PCM data: {len(pcm_data)} bytes")
+                
+                # Check if we have enough PCM data (at least 0.1 seconds of audio)
+                # 16kHz * 2 bytes/sample * 0.1s = 3200 bytes minimum
+                if len(pcm_data) < 3200:
+                    logger.warning(f"PCM data too short: {len(pcm_data)} bytes (< 0.1s of audio)")
+                    return ""
+                
+                audio_bytes = pcm_data
+            else:
+                logger.debug(f"Raw PCM format detected, size: {len(audio_bytes)} bytes")
 
             # Define audio format: 16kHz, 16-bit, mono PCM
             audio_format = speechsdk.audio.AudioStreamFormat(
