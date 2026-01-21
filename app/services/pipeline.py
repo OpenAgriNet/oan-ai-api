@@ -1113,128 +1113,136 @@ class ConversationPipeline:
                         stream_obj = None  # Save reference to stream for later
                         async with stream_context as stream:
                             stream_obj = stream  # Save reference
-                            # Stream text chunks using stream_text(delta=True)
-                            async for chunk in stream.stream_text(delta=True):
-                                logger.debug(f"[Turn {turn_id}] Received chunk from LLM: '{chunk[:30] if chunk else 'None'}...'")
-                                # Check for interruption - but NOT for amendments or noise
-                                current_turn = await self.state.get_turn_id()
-                                
-                                if current_turn != turn_id:
-                                    # Check if the newer turn should preempt this one
-                                    # Don't preempt if newer turn is:
-                                    # 1. An amendment (is_amendment=True)
-                                    # 2. Noise/empty transcription (has_transcription=False)
-                                    # 3. Still being processed (has_transcription not set yet)
-                                    should_preempt = False
-                                    for check_turn in range(turn_id + 1, current_turn + 1):
-                                        if check_turn in self.turn_timings:
-                                            turn_info = self.turn_timings[check_turn]
-                                            is_amendment = turn_info.get("is_amendment", False)
-                                            has_transcription = turn_info.get("has_transcription", None)
-                                            
-                                            # Preempt only if newer turn has real content and is not amendment
-                                            if has_transcription is True and not is_amendment:
-                                                should_preempt = True
-                                                break
+                            try:
+                                # Stream text chunks using stream_text(delta=True)
+                                async for chunk in stream.stream_text(delta=True):
+                                    logger.debug(f"[Turn {turn_id}] Received chunk from LLM: '{chunk[:30] if chunk else 'None'}...'")
+                                    # Check for interruption - but NOT for amendments or noise
+                                    current_turn = await self.state.get_turn_id()
                                     
-                                    if should_preempt:
-                                        logger.info(f"LLM preempted (turn {turn_id} -> {current_turn})")
+                                    if current_turn != turn_id:
+                                        # Check if the newer turn should preempt this one
+                                        # Don't preempt if newer turn is:
+                                        # 1. An amendment (is_amendment=True)
+                                        # 2. Noise/empty transcription (has_transcription=False)
+                                        # 3. Still being processed (has_transcription not set yet)
+                                        should_preempt = False
+                                        for check_turn in range(turn_id + 1, current_turn + 1):
+                                            if check_turn in self.turn_timings:
+                                                turn_info = self.turn_timings[check_turn]
+                                                is_amendment = turn_info.get("is_amendment", False)
+                                                has_transcription = turn_info.get("has_transcription", None)
+                                                
+                                                # Preempt only if newer turn has real content and is not amendment
+                                                if has_transcription is True and not is_amendment:
+                                                    should_preempt = True
+                                                    break
+                                        
+                                        if should_preempt:
+                                            logger.info(f"LLM preempted (turn {turn_id} -> {current_turn})")
+                                            break
+                                        # else: continue processing - newer turns are noise/amendments/pending
+                                    
+                                    if self.state.should_stop:
                                         break
-                                    # else: continue processing - newer turns are noise/amendments/pending
-                                
-                                if self.state.should_stop:
-                                    break
 
-                                if chunk and isinstance(chunk, str):
-                                    # Handle intermediate message (LLM outputs this at start if calling tools)
-                                    if "[INTERMEDIATE:" in chunk:
-                                        logger.info(f"[Turn {turn_id}] 🔵 DETECTED [INTERMEDIATE:] in chunk: '{chunk}'")
-                                        # Extract intermediate message
-                                        start_idx = chunk.find("[INTERMEDIATE:")
-                                        end_idx = chunk.find("]", start_idx)
-                                        if end_idx > 0:
-                                            intermediate_msg = chunk[start_idx + 14:end_idx]  # Extract from [INTERMEDIATE:message]
-                                            logger.info(f"🔵 [Voice] LLM provided intermediate message: '{intermediate_msg}'")
-                                            
-                                            # Send as WebSocket message
+                                    if chunk and isinstance(chunk, str):
+                                        # Handle intermediate message (LLM outputs this at start if calling tools)
+                                        if "[INTERMEDIATE:" in chunk:
+                                            logger.info(f"[Turn {turn_id}] 🔵 DETECTED [INTERMEDIATE:] in chunk: '{chunk}'")
+                                            # Extract intermediate message
+                                            start_idx = chunk.find("[INTERMEDIATE:")
+                                            end_idx = chunk.find("]", start_idx)
+                                            if end_idx > 0:
+                                                intermediate_msg = chunk[start_idx + 14:end_idx]  # Extract from [INTERMEDIATE:message]
+                                                logger.info(f"🔵 [Voice] LLM provided intermediate message: '{intermediate_msg}'")
+                                                
+                                                # Send as WebSocket message
+                                                await self.ws_manager.send_json({
+                                                    "type": "intermediate",
+                                                    "text": intermediate_msg,
+                                                    "turn_id": turn_id
+                                                })
+                                                logger.info(f"🔵 [Voice] Sent intermediate WebSocket message")
+                                                
+                                                # Synthesize and send intermediate audio
+                                                try:
+                                                    intermediate_audio = await self.tts_provider._synthesize_chunk(intermediate_msg, self.state.lang)
+                                                    if intermediate_audio:
+                                                        await self.tts_queue.put((intermediate_audio, turn_id))
+                                                        logger.info(f"🔵 [Voice] Intermediate audio sent for turn {turn_id}")
+                                                except Exception as e:
+                                                    logger.warning(f"Failed to synthesize intermediate audio: {e}")
+                                                
+                                                # Remove the marker from chunk and continue with rest
+                                                chunk = chunk[:start_idx] + chunk[end_idx + 1:]
+                                                logger.info(f"🔵 [Voice] Chunk after removing marker: '{chunk}'")
+                                                if not chunk.strip():
+                                                    logger.info(f"🔵 [Voice] Chunk empty after removing marker, continuing to next chunk")
+                                                    continue  # Skip if chunk is now empty after removing marker
+                                        
+                                        # Handle status messages (show to user but don't send to TTS)
+                                        if chunk.startswith("[STATUS:"):
+                                            # Extract status message
+                                            status_msg = chunk[8:-1]  # Extract status from [STATUS:message]
+                                            logger.info(f"Status update: {status_msg}")
                                             await self.ws_manager.send_json({
-                                                "type": "intermediate",
-                                                "text": intermediate_msg,
+                                                "type": "status",
+                                                "message": status_msg,
                                                 "turn_id": turn_id
                                             })
-                                            logger.info(f"🔵 [Voice] Sent intermediate WebSocket message")
-                                            
-                                            # Synthesize and send intermediate audio
-                                            try:
-                                                intermediate_audio = await self.tts_provider._synthesize_chunk(intermediate_msg, self.state.lang)
-                                                if intermediate_audio:
-                                                    await self.tts_queue.put((intermediate_audio, turn_id))
-                                                    logger.info(f"🔵 [Voice] Intermediate audio sent for turn {turn_id}")
-                                            except Exception as e:
-                                                logger.warning(f"Failed to synthesize intermediate audio: {e}")
-                                            
-                                            # Remove the marker from chunk and continue with rest
-                                            chunk = chunk[:start_idx] + chunk[end_idx + 1:]
-                                            logger.info(f"🔵 [Voice] Chunk after removing marker: '{chunk}'")
-                                            if not chunk.strip():
-                                                logger.info(f"🔵 [Voice] Chunk empty after removing marker, continuing to next chunk")
-                                                continue  # Skip if chunk is now empty after removing marker
-                                    
-                                    # Handle status messages (show to user but don't send to TTS)
-                                    if chunk.startswith("[STATUS:"):
-                                        # Extract status message
-                                        status_msg = chunk[8:-1]  # Extract status from [STATUS:message]
-                                        logger.info(f"Status update: {status_msg}")
-                                        await self.ws_manager.send_json({
-                                            "type": "status",
-                                            "message": status_msg,
-                                            "turn_id": turn_id
-                                        })
-                                        continue  # Don't add to collected_text or TTS queue
-                                    
-                                    # Handle tool events (don't send to TTS, just notify frontend)
-                                    elif chunk.startswith("[TOOL:"):
-                                        # Tool call started - notify frontend for progress
-                                        tool_name = chunk[6:-1]  # Extract tool name from [TOOL:name]
-                                        logger.info(f"Tool call: {tool_name}")
-                                        await self.ws_manager.send_json({
-                                            "type": "tool_call",
-                                            "tool": tool_name,
-                                            "turn_id": turn_id
-                                        })
-                                        continue  # Don't add to collected_text or TTS queue
-                                    
-                                    elif chunk == "[TOOL_DONE]":
-                                        # Tool completed - notify frontend
-                                        await self.ws_manager.send_json({
-                                            "type": "tool_done",
-                                            "turn_id": turn_id
-                                        })
-                                        continue  # Don't add to collected_text or TTS queue
-                                    
-                                    # Regular text chunk - send to TTS and frontend
-                                    collected_text += chunk
-                                    chunk_count += 1
+                                            continue  # Don't add to collected_text or TTS queue
+                                        
+                                        # Handle tool events (don't send to TTS, just notify frontend)
+                                        elif chunk.startswith("[TOOL:"):
+                                            # Tool call started - notify frontend for progress
+                                            tool_name = chunk[6:-1]  # Extract tool name from [TOOL:name]
+                                            logger.info(f"Tool call: {tool_name}")
+                                            await self.ws_manager.send_json({
+                                                "type": "tool_call",
+                                                "tool": tool_name,
+                                                "turn_id": turn_id
+                                            })
+                                            continue  # Don't add to collected_text or TTS queue
+                                        
+                                        elif chunk == "[TOOL_DONE]":
+                                            # Tool completed - notify frontend
+                                            await self.ws_manager.send_json({
+                                                "type": "tool_done",
+                                                "turn_id": turn_id
+                                            })
+                                            continue  # Don't add to collected_text or TTS queue
+                                        
+                                        # Regular text chunk - send to TTS and frontend
+                                        collected_text += chunk
+                                        chunk_count += 1
 
-                                    try:
-                                        await asyncio.wait_for(
-                                            self.llm_queue.put((chunk, turn_id)),
-                                            timeout=1.0
-                                        )
-                                        # Mark first response chunk so frontend knows to start new line
-                                        msg = {
-                                            "type": "llm_chunk",
-                                            "text": chunk,
-                                            "turn_id": turn_id
-                                        }
-                                        if first_response_chunk:
-                                            msg["is_first"] = True
-                                            first_response_chunk = False
-                                        logger.info(f"[Turn {turn_id}] Sending chunk #{chunk_count}: '{chunk[:30]}...' ({len(chunk)} chars)")
-                                        await self.ws_manager.send_json(msg)
-                                        logger.info(f"[Turn {turn_id}] Chunk #{chunk_count} sent to frontend")
-                                    except asyncio.TimeoutError:
-                                        logger.warning("LLM queue full, dropping chunk")
+                                        try:
+                                            await asyncio.wait_for(
+                                                self.llm_queue.put((chunk, turn_id)),
+                                                timeout=1.0
+                                            )
+                                            # Mark first response chunk so frontend knows to start new line
+                                            msg = {
+                                                "type": "llm_chunk",
+                                                "text": chunk,
+                                                "turn_id": turn_id
+                                            }
+                                            if first_response_chunk:
+                                                msg["is_first"] = True
+                                                first_response_chunk = False
+                                            logger.info(f"[Turn {turn_id}] Sending chunk #{chunk_count}: '{chunk[:30]}...' ({len(chunk)} chars)")
+                                            await self.ws_manager.send_json(msg)
+                                            logger.info(f"[Turn {turn_id}] Chunk #{chunk_count} sent to frontend")
+                                        except asyncio.TimeoutError:
+                                            logger.warning("LLM queue full, dropping chunk")
+                            
+                            except (StopAsyncIteration, GeneratorExit, RuntimeError) as e:
+                                # Handle async generator cleanup errors
+                                # These occur when breaking out of async for loop during stream preemption
+                                if isinstance(e, RuntimeError) and "StopAsyncIteration" not in str(e):
+                                    raise  # Re-raise if it's a different RuntimeError
+                                logger.debug(f"[Turn {turn_id}] Stream cleanup during preemption (expected): {type(e).__name__}")
 
                             # Send EOS marker - check if we completed or were preempted
                             current_turn = await self.state.get_turn_id()
