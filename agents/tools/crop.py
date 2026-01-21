@@ -178,9 +178,9 @@ async def get_crop_price_in_marketplace(
                 f"{price_row.crop_name} ({price_row.crop_name_amharic}) prices in {marketplace.name}:\n\n"
                 f"* Variety: {price_row.variety_name or 'N/A'}" +
                 (f" ({price_row.variety_name_amharic})" if price_row.variety_name_amharic else "") + "\n"
-                f"* Min Price: {price_row.min_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Max Price: {price_row.max_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Avg Price: {price_row.avg_price} ETB/{price_row.unit or 'unit'}\n"
+                f"* Min Price: {price_row.min_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Max Price: {price_row.max_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
                 f"* Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
                 f"* Source: https://nmis.et/"
             )
@@ -397,10 +397,10 @@ async def get_crop_price_quick(
                 f"{price_row.crop_name} ({price_row.crop_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
                 f"* Variety: {price_row.variety_name or 'N/A'}" +
                 (f" ({price_row.variety_name_amharic})" if price_row.variety_name_amharic else "") + "\n"
-                f"* Min Price: {price_row.min_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Max Price: {price_row.max_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Avg Price: {price_row.avg_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Modal Price: {price_row.modal_price} ETB/{price_row.unit or 'unit'}\n"
+                f"* Min Price: {price_row.min_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Max Price: {price_row.max_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Modal Price: {price_row.modal_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
                 f"* Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
                 f"* Source: https://nmis.et/"
             )
