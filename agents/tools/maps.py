@@ -1,4 +1,5 @@
 import os
+import asyncio
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
@@ -34,21 +35,7 @@ class Location(BaseModel):
         if v is not None:
             return round(float(v), 3)
         return v
-    
-    def model_post_init(self, __context__) -> None:
-        """Called after the model is initialized."""
-        super().model_post_init(__context__)
-        self.check_place_name()
-    
-    def check_place_name(self) -> None:
-        """If coordinates are provided but not place name, do reverse geocoding."""
-        if self.latitude is not None and self.longitude is not None and self.place_name is None:
-            try:
-                location = geocoder.reverse((self.latitude, self.longitude), exactly_one=True)
-                if location:
-                    self.place_name = location.raw['display_name']
-            except (GeocoderTimedOut, GeocoderServiceError) as e:
-                logger.error(f"Reverse geocoding error: {e}")
+
 
     def _location_string(self):
         if self.latitude and self.longitude:
@@ -60,10 +47,11 @@ class Location(BaseModel):
         return f"{self.place_name} ({self.latitude}, {self.longitude})"
 
 
-def forward_geocode(place_name: str) -> Optional[Location]:
+async def forward_geocode(place_name: str) -> Optional[Location]:
     """Use this tool to get latitude and longitude of a place given its name."""
     try:
-        response = geocoder.geocode(
+        response = await asyncio.to_thread(
+            geocoder.geocode,
             place_name,
             exactly_one=True,
             addressdetails=True,
@@ -91,16 +79,17 @@ def forward_geocode(place_name: str) -> Optional[Location]:
         return None
 
 
-def reverse_geocode(latitude: float, longitude: float) -> Optional[Location]:
+async def reverse_geocode(latitude: float, longitude: float) -> Optional[Location]:
     """Use this tool to get the place name given its latitude and longitude."""
     try:
-        location = geocoder.reverse(
-            (latitude, longitude), 
-            exactly_one=True, 
+        location = await asyncio.to_thread(
+            geocoder.reverse,
+            (latitude, longitude),
+            exactly_one=True,
             addressdetails=True,
             zoom=10,
             language='en'
-            )
+        )
         logger.info(f"Reverse geocoding response: {location}")
         
         if not location:
