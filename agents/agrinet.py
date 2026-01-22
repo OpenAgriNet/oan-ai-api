@@ -14,7 +14,6 @@ agrinet_agent = Agent(
     tools=TOOLS,
     end_strategy='exhaustive',
     model_settings={
-        "max_output_tokens": 200,
         "temperature": 0.2,
         "thinking_config": {
             "thinking_level": "MINIMAL"

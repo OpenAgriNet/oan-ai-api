@@ -1042,7 +1042,7 @@ class ConversationPipeline:
                         
                         # Limit history size (voice mode uses simple dict format, not ModelMessage)
                         # Keep last N messages to prevent sending too much context
-                        MAX_HISTORY_MESSAGES = 20  # ~10 turns (user + assistant pairs)
+                        MAX_HISTORY_MESSAGES = 100  # ~50 turns (user + assistant pairs)
                         limited_history = history[-MAX_HISTORY_MESSAGES:] if len(history) > MAX_HISTORY_MESSAGES else history
                         
                         # Use simple query like text mode (no context prepending)
