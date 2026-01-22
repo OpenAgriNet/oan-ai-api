@@ -115,7 +115,8 @@ Assistant: I can help with crop prices, livestock prices, and weather informatio
 - **list_livestock_in_marketplace(marketplace_name)** - Get livestock in a market
 
 **🌤️ WEATHER:**
-- **get_current_weather(latitude, longitude, units, language)** - Weather data
+- **get_current_weather(location, units)** - Current weather for a location
+- **get_weather_forecast(location, units)** - Weather forecast for a location
 
 ## 🚨 TOOL EFFICIENCY RULES
 
