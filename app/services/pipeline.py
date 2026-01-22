@@ -1040,34 +1040,20 @@ class ConversationPipeline:
                             lang_code=self.state.lang,
                         )
                         
-                        # Format recent conversation context like text chat does
-                        # This helps the LLM understand the conversation flow better
-                        recent_context = ""
-                        if len(history) > 1:  # More than just system prompt
-                            # Get last few exchanges (user + assistant pairs)
-                            recent_messages = []
-                            for msg in history[-6:]:  # Last 6 messages (3 pairs)
-                                if isinstance(msg, dict):
-                                    role = msg.get('role', '')
-                                    content = msg.get('content', '')
-                                    if role in ['user', 'assistant'] and content:
-                                        recent_messages.append(f"{role.capitalize()}: {content}")
-                            
-                            if recent_messages:
-                                recent_context = "\n".join(recent_messages) + "\n\n"
-                                logger.info(f"[Turn {turn_id}] 📝 Recent context:\n{recent_context}")
+                        # Limit history size (voice mode uses simple dict format, not ModelMessage)
+                        # Keep last N messages to prevent sending too much context
+                        MAX_HISTORY_MESSAGES = 100  # ~50 turns (user + assistant pairs)
+                        limited_history = history[-MAX_HISTORY_MESSAGES:] if len(history) > MAX_HISTORY_MESSAGES else history
                         
-                        # Prepend context to current query like text chat does
-                        user_prompt_with_context = f"{recent_context}Current query: {text}" if recent_context else text
-                        
-                        # Use agent's run_stream for proper caching
-                        # Match text chat behavior - don't pass instructions, let system prompt handle it
+                        # Use simple query like text mode (no context prepending)
+                        # The message_history already contains the conversation context
+                        # No need to duplicate it in the user_prompt
                         logger.info(f"[Turn {turn_id}] 🤖 Calling agent with:")
-                        logger.info(f"  - user_prompt: '{user_prompt_with_context[:100]}...'")
-                        logger.info(f"  - history length: {len(history)}")
+                        logger.info(f"  - user_prompt: '{text[:100]}...'")
+                        logger.info(f"  - history length: {len(limited_history)}")
                         
                         # Log last 3 messages from history for debugging
-                        for i, msg in enumerate(history[-3:]):
+                        for i, msg in enumerate(limited_history[-3:]):
                             if isinstance(msg, dict):
                                 role = msg.get('role', 'unknown')
                                 content = str(msg.get('content', ''))[:80]
@@ -1102,11 +1088,46 @@ class ConversationPipeline:
                         else:
                             logger.debug(f"[Turn {turn_id}] Suggestions disabled via ENABLE_SUGGESTIONS env var")
                         
+                        # Instructions for natural, conversational responses with strong context awareness
+                        instructions = (
+                            "⚠️ FORBIDDEN PHRASES - NEVER SAY:\n"
+                            "- 'Let me check that for you'\n"
+                            "- 'Let me check' / 'I'll check' / 'I'm checking'\n"
+                            "- 'One moment'\n"
+                            "- 'per NMIS' / 'per OpenWeatherMap' / 'Source:' / 'according to'\n"
+                            "- 'Based on my knowledge' / 'Typically' / 'Usually'\n"
+                            "\n"
+                            "🚨 CRITICAL RULES:\n"
+                            "1. NO GENERAL KNOWLEDGE - You MUST use tools for ALL factual information\n"
+                            "2. NEVER answer from your internal knowledge about prices or weather\n"
+                            "3. If you don't have a tool, say: 'I can help with crop prices, livestock prices, and weather'\n"
+                            "4. CALENDAR: Use Gregorian calendar (January, February) for English responses\n"
+                            "5. CALENDAR: Use Ethiopian calendar (መስከረም, ጥቅምት) for Amharic responses\n"
+                            "6. NUMBERS: Use digits (5,100) for all numbers - TTS will handle pronunciation\n"
+                            "\n"
+                            "🔥 CONTEXT AWARENESS:\n"
+                            "- If user already mentioned crop/livestock/market, NEVER ask for it again\n"
+                            "- Review conversation history before asking questions\n"
+                            "- User says 'wheat prices' → Remember crop=wheat, only ask for market\n"
+                            "- User repeats 'I said wheat' → Acknowledge and ask for missing info only\n"
+                            "\n"
+                            "CONVERSATIONAL RULES:\n"
+                            "1. Sound natural and human, not robotic\n"
+                            "2. Use varied acknowledgements: 'Alright.', 'Got it.', 'Here's what I found.'\n"
+                            "3. Missing info? Ask once with examples: 'Which crop? For example: Wheat, Teff, or Maize?'\n"
+                            "4. Have complete info? Call tool and respond with price\n"
+                            "5. Format: Price range + date in 1-2 sentences\n"
+                            "6. Always end with: 'Would you like another crop price or a different market?'\n"
+                            "7. DO NOT mention sources - UI shows them automatically\n"
+                            "8. Keep responses short and conversational for voice\n"
+                            "9. Use DIGITS for all numbers (5,100) - easier to read and TTS will convert"
+                        )
+                        
                         stream_context = agrinet_agent.run_stream(
-                            user_prompt=user_prompt_with_context,  # Include recent context in prompt
-                            message_history=history,
+                            user_prompt=text,
+                            message_history=limited_history,
                             deps=context,
-                            # NO instructions parameter - let system prompt handle everything
+                            instructions=instructions,
                         )
 
                         # Use async context manager for agent stream
