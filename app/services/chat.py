@@ -3,7 +3,7 @@ import json
 import time
 import os
 from agents.agrinet import agrinet_agent
-from agents.moderation import moderation_agent
+from app.services.moderation_classifier import moderation_classifier
 from helpers.utils import get_logger
 from app.utils import (
     update_message_history,
@@ -14,7 +14,7 @@ from app.utils import extract_sources_from_result
 from dotenv import load_dotenv
 from agents.deps import FarmerContext
 from pydantic_ai import UsageLimits
-
+from pydantic_ai.messages import ModelResponse, TextPart
 load_dotenv()
 
 logger = get_logger(__name__)
@@ -51,20 +51,36 @@ async def stream_chat_messages(
     stage_time = (time.perf_counter() - stage_start) * 1000
     logger.info(f"⏱️ [TIMING] Context preparation: {stage_time:.2f}ms")
     
-    # ⏱️ STAGE 2: Moderation (OPTIONAL - can be disabled for speed)
-    # NOTE: Old backend doesn't have moderation - this adds 3-4 seconds overhead
-    # Set ENABLE_MODERATION=false in .env to disable
+    # ⏱️ STAGE 2: Pre-Moderation (User Input)
     enable_moderation = os.getenv("ENABLE_MODERATION", "false").lower() == "true"
     
     if enable_moderation:
         stage_start = time.perf_counter()
-        moderation_run = await moderation_agent.run(user_message)
-        moderation_data = moderation_run.output
-        stage_time = (time.perf_counter() - stage_start) * 1000
-        logger.info(f"⏱️ [TIMING] Moderation agent: {stage_time:.2f}ms")
-        deps.update_moderation_str(str(moderation_data))
+        try:
+            pre_mod_result = moderation_classifier.classify(query, lang=target_lang)
+            stage_time = (time.perf_counter() - stage_start) * 1000
+            logger.info(f"⏱️ [TIMING] Pre-moderation: {stage_time:.2f}ms - {pre_mod_result.reason}")
+            
+            if not pre_mod_result.is_safe:
+                logger.warning(f"User input blocked: {pre_mod_result.label} - {pre_mod_result.reason}")
+                response_data = {
+                    "response": "I'm sorry, but I cannot process this request as it contains potentially harmful content.",
+                    "status": "blocked",
+                    "moderation": {
+                        "stage": "pre",
+                        "label": pre_mod_result.label,
+                        "reason": pre_mod_result.reason
+                    }
+                }
+                yield json.dumps(response_data)
+                return
+                
+        except Exception as e:
+            logger.error(f"Pre-moderation failed: {e}. Continuing (fail-open).")
+            stage_time = (time.perf_counter() - stage_start) * 1000
+            logger.info(f"⏱️ [TIMING] Pre-moderation (failed): {stage_time:.2f}ms")
     else:
-        logger.info(f"⏱️ [TIMING] Moderation agent: DISABLED (0ms)")
+        logger.info(f"⏱️ [TIMING] Pre-moderation: DISABLED (0ms)")
 
     # ⏱️ STAGE 3: History trimming
     stage_start = time.perf_counter()
@@ -80,29 +96,64 @@ async def stream_chat_messages(
     # ⏱️ STAGE 4: Main agent execution
     stage_start = time.perf_counter()
     
-    # Use simple query like old backend (not formatted deps.get_user_message())
     response_stream = await agrinet_agent.run(
-            user_prompt=query,  # Simple query, not deps.get_user_message()
+            user_prompt=query,
             message_history=trimmed_history,
             deps=deps,
             usage_limits=UsageLimits(request_limit=200),
         )
     stage_time = (time.perf_counter() - stage_start) * 1000
     logger.info(f"⏱️ [TIMING] Main agent execution: {stage_time:.2f}ms")
+
+    # ⏱️ STAGE 4.5: Post-Moderation (Agent Output)
+    post_mod_blocked = False
     
+    if enable_moderation:
+        stage_start = time.perf_counter()
+        try:
+            post_mod_result = moderation_classifier.classify(str(response_stream.output), lang=target_lang)
+            stage_time = (time.perf_counter() - stage_start) * 1000
+            logger.info(f"⏱️ [TIMING] Post-moderation: {stage_time:.2f}ms - {post_mod_result.reason}")
+            
+            if not post_mod_result.is_safe:
+                logger.warning(f"Response blocked: {post_mod_result.label} - {post_mod_result.reason}")
+                post_mod_blocked = True
+                final_response_text = "I cannot fulfill this request as the generated response was flagged as potentially unsafe."
+            else:
+                final_response_text = response_stream.output
+                
+        except Exception as e:
+            logger.error(f"Post-moderation failed: {e}. Allowing response through (fail-open).")
+            stage_time = (time.perf_counter() - stage_start) * 1000
+            logger.info(f"⏱️ [TIMING] Post-moderation (failed): {stage_time:.2f}ms")
+            final_response_text = response_stream.output
+    else:
+        final_response_text = response_stream.output
+
     # ⏱️ STAGE 5: Source extraction
     stage_start = time.perf_counter()
-    sources = extract_sources_from_result(response_stream)
+    if post_mod_blocked:
+        sources = []
+    else:
+        sources = extract_sources_from_result(response_stream)
     stage_time = (time.perf_counter() - stage_start) * 1000
     logger.info(f"⏱️ [TIMING] Source extraction: {stage_time:.2f}ms")
 
     # ⏱️ STAGE 6: History update
     stage_start = time.perf_counter()
     new_messages = response_stream.new_messages()
-    messages = [
-        *history,
-        *new_messages
-    ]
+    
+    if post_mod_blocked:
+        blocked_response = ModelResponse(parts=[TextPart(content=final_response_text)])
+        messages = [
+            *history,
+            blocked_response
+        ]
+    else:
+        messages = [
+            *history,
+            *new_messages
+        ]
     await update_message_history(session_id, messages)
     stage_time = (time.perf_counter() - stage_start) * 1000
     logger.info(f"⏱️ [TIMING] History update: {stage_time:.2f}ms")
@@ -111,13 +162,12 @@ async def stream_chat_messages(
     total_time = (time.perf_counter() - pipeline_start) * 1000
     logger.info(f"⏱️ [TIMING] ═══ TOTAL PIPELINE: {total_time:.2f}ms ═══")
     
-    # Return complete response as JSON (not mixed format)
+    # Return complete response as JSON
     response_data = {
-        "response": response_stream.output,
+        "response": final_response_text,
         "status": "success"
     }
     
-    # Add sources if available
     if sources:
         response_data["sources"] = sources
     
