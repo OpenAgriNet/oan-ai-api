@@ -154,10 +154,7 @@ async def stream_chat_messages(
             *history,
             *new_messages
         ]
-    await update_message_history(session_id, messages)
-    stage_time = (time.perf_counter() - stage_start) * 1000
-    logger.info(f"⏱️ [TIMING] History update: {stage_time:.2f}ms")
-
+    
     # ⏱️ TOTAL PIPELINE TIME
     total_time = (time.perf_counter() - pipeline_start) * 1000
     logger.info(f"⏱️ [TIMING] ═══ TOTAL PIPELINE: {total_time:.2f}ms ═══")
@@ -172,3 +169,7 @@ async def stream_chat_messages(
         response_data["sources"] = sources
     
     yield json.dumps(response_data)
+    
+    await update_message_history(session_id, messages)
+    stage_time = (time.perf_counter() - stage_start) * 1000
+    logger.info(f"⏱️ [TIMING] History update: {stage_time:.2f}ms")
