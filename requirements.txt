@@ -25,7 +25,7 @@ openai
 pydantic==2.12.5
 tiktoken
 tenacity
-
+transformers
 # Logfire
 logfire
 
