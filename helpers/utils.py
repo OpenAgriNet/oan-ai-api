@@ -16,6 +16,122 @@ from datetime import datetime
 import simplejson as json
 from jinja2 import Environment, FileSystemLoader
 import soundfile as sf
+import time
+import functools
+
+load_dotenv()
+
+
+def get_s3_client():
+    """Get S3 client."""
+    return boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+        region_name=os.getenv('AWS_REGION'),
+        endpoint_url=os.getenv("AWS_ENDPOINT_URL", None)
+    )
+
+
+def get_today_date_str() -> str:
+    """Get today's date as a string in the format Monday, 23rd May 2025."""
+    today = datetime.now()
+    return today.strftime('%A, %d %B %Y')
+
+
+def get_logger(name) -> logging.Logger:
+    """Get logger object."""
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch = logging.StreamHandler()
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    return logger
+
+def log_execution_time(func=None, logger=None):
+    """
+    Decorator to log usage and timing of functions.
+    Can be used as @log_execution_time or @log_execution_time(logger=my_logger)
+    """
+    def _create_wrapper(original_func, custom_logger):
+        log = custom_logger if custom_logger else get_logger(original_func.__module__)
+
+        def _record_timing(args, event_type, extra_data=None):
+            try:
+                # Try to find RunContext in args to record timing
+                for arg in args:
+                    if hasattr(arg, 'deps') and hasattr(arg.deps, 'timings'):
+                         data = {
+                             "step": event_type,
+                             "tool": original_func.__name__,
+                             "timestamp": time.perf_counter(),
+                         }
+                         if extra_data:
+                             data.update(extra_data)
+                         arg.deps.timings.append(data)
+                         break
+            except Exception:
+                pass
+
+        @functools.wraps(original_func)
+        def wrapper(*args, **kwargs):
+            start_time = time.perf_counter()
+            _record_timing(args, "tool_start")
+            
+            try:
+                # Check for async
+                if asyncio.iscoroutinefunction(original_func):
+                    return asyncio.run(wrapper_async(*args, **kwargs))
+                
+                result = original_func(*args, **kwargs)
+                end_time = time.perf_counter()
+                duration = (end_time - start_time) * 1000
+                
+                _record_timing(args, "tool_end", {"duration": duration})
+                log.info(f"⏱️  TOOL: {original_func.__name__} | Time: {duration:.2f} ms")
+                return result
+            except Exception as e:
+                end_time = time.perf_counter()
+                duration = (end_time - start_time) * 1000
+                log.error(f"❌ TOOL_FAIL: {original_func.__name__} | Time: {duration:.2f} ms | Error: {e}")
+                raise e
+        
+        @functools.wraps(original_func)
+        async def wrapper_async(*args, **kwargs):
+            start_time = time.perf_counter()
+            _record_timing(args, "tool_start")
+            
+            try:
+                result = await original_func(*args, **kwargs)
+                end_time = time.perf_counter()
+                duration = (end_time - start_time) * 1000
+                
+                _record_timing(args, "tool_end", {"duration": duration})
+                log.info(f"⏱️  TOOL: {original_func.__name__} | Time: {duration:.2f} ms")
+                return result
+            except Exception as e:
+                end_time = time.perf_counter()
+                duration = (end_time - start_time) * 1000
+                log.error(f"❌ TOOL_FAIL: {original_func.__name__} | Time: {duration:.2f} ms | Error: {e}")
+                raise e
+
+        if asyncio.iscoroutinefunction(original_func):
+            return wrapper_async
+        return wrapper
+
+    if func and callable(func):
+        # Case: @log_execution_time (no parens)
+        return _create_wrapper(func, logger)
+    
+    # Case: @log_execution_time(logger=...) (with parens)
+    def decorator(original_func):
+        return _create_wrapper(original_func, logger)
+    return decorator
+
+import asyncio
+
 
 load_dotenv()
 

@@ -6,7 +6,7 @@ from sqlalchemy import func, or_, select
 from app.models.market import Crop, CropVariety, MarketPrice, Marketplace
 from typing import List, Optional, Tuple, Union
 from sqlalchemy.orm import joinedload
-from helpers.utils import get_logger
+from helpers.utils import get_logger, log_execution_time
 
 logger = get_logger(__name__)
 
@@ -16,6 +16,7 @@ async def _get_marketplace(
     marketplace_name: str,
     region: Optional[str] = None
 ) -> Tuple[Optional[Marketplace], Optional[str]]:
+
     """
     Internal helper to get marketplace by name, optionally filtered by region.
 
@@ -58,6 +59,7 @@ async def _get_marketplace(
     return None, f"Multiple marketplaces found: {', '.join(regions_list)}. Please specify region."
 
 
+@log_execution_time
 async def list_crops_in_marketplace(
     ctx: RunContext[FarmerContext],
     marketplace_name: str,
@@ -110,6 +112,7 @@ async def list_crops_in_marketplace(
         )
 
 
+@log_execution_time
 async def get_crop_price_in_marketplace(
     ctx: RunContext[FarmerContext],
     marketplace_name: str,
@@ -188,6 +191,7 @@ async def get_crop_price_in_marketplace(
         return "\n\n".join(price_data_varieties.values())
 
 
+@log_execution_time
 async def compare_crop_prices_nearby(
     ctx: RunContext[FarmerContext],
     marketplace_names: List[str],
@@ -264,6 +268,7 @@ async def compare_crop_prices_nearby(
         return "\n\n".join(lines)
 
 
+@log_execution_time
 async def get_crop_price_quick(
     ctx: RunContext[FarmerContext],
     crop_name: str,

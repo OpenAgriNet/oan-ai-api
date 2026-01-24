@@ -47,7 +47,7 @@ openpyxl
 # Template Engine
 jinja2
 
-### Pydantic AI 
+# Pydantic AI 
 pydantic-ai==1.38.0
 google-genai==1.57.0
 asgiref
@@ -79,3 +79,8 @@ geopy
 rapidfuzz
 fastapi
 aiocache
+
+# Pipecat
+pipecat-ai[silero]
+onnxruntime
+

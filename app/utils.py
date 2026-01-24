@@ -7,6 +7,7 @@ from pydantic_ai.messages import (
     ModelMessagesTypeAdapter,
     ModelMessage,
     SystemPromptPart,
+    TextPart,
 )
 from pydantic_core import to_jsonable_python
 
@@ -342,3 +343,26 @@ def extract_sources_from_result(result) -> List[str]:
         logger.error(f"Error extracting sources: {e}", exc_info=True)
 
     return sorted(list(sources))
+
+def sanitize_history_for_generation(history: List[ModelMessage]) -> List[ModelMessage]:
+    """
+    Convert history with tools to pure text history to prevent hallucinations
+    when using an agent without tools (like generation_agent).
+    """
+    sanitized = []
+    for msg in history:
+        new_parts = []
+        for part in msg.parts:
+            kind = getattr(part, 'part_kind', '')
+            if kind == 'tool-call':
+                 new_parts.append(TextPart(content=f"[Assistant called tool '{getattr(part, 'tool_name', 'unknown')}']"))
+            elif kind == 'tool-return':
+                 new_parts.append(TextPart(content=f"[Tool '{getattr(part, 'tool_name', 'unknown')}' result: {getattr(part, 'content', '')}]"))
+            else:
+                 new_parts.append(part)
+        
+        if new_parts:
+             new_msg = deepcopy(msg)
+             new_msg.parts = new_parts
+             sanitized.append(new_msg)
+    return sanitized
