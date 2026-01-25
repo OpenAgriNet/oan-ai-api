@@ -4,6 +4,8 @@ Local Hate Speech Moderation Classifier
 Uses local transformer models for hate speech detection:
 - Amharic: uhhlt/amharic-hate-speech (labels: offensive, hate, normal)
 - English: facebook/roberta-hate-speech-dynabench-r4-target (labels: nothate, hate)
+
+Includes whitelist for agricultural terms to prevent false positives.
 """
 
 import re
@@ -23,10 +25,65 @@ class ModerationResult:
     reason: str
 
 
+# ============================================================================
+# AGRICULTURAL WHITELIST - Terms that should always pass moderation
+# ============================================================================
+AGRICULTURAL_WHITELIST = [
+    # Livestock
+    "ox", "cow", "calf", "bull", "heifer",
+    "male young goat", "male adult goat", "male old goat",
+    "female young goat", "female adult goat", "female old goat",
+    "male young sheep", "male adult sheep", "male old sheep",
+    "female young sheep", "female adult sheep", "female old sheep",
+    "male young camel", "male adult camel", "male old camel",
+    "female young camel", "female adult camel", "female old camel",
+    "male immature camel", "female immature camel",
+    "rooster", "chicken", "chickens", "pullet", "laying eggs", "egg", "eggs",
+    "goat", "sheep", "camel", "cattle", "poultry",
+    
+    # Crops - Teff
+    "white teff", "red teff", "mixed teff", "teff",
+    
+    # Crops - Grains
+    "white wheat", "wheat", "white maize", "maize", "corn",
+    "sorghum", "local rice", "rice", "malt barley", "barley",
+    
+    # Crops - Vegetables
+    "onion", "tomato", "potato", "garlic", "red pepper", "pepper",
+    
+    # Crops - Fruits
+    "avocado", "mango", "raw banana", "ripe banana", "banana", "pineapple",
+    
+    # Crops - Legumes & Seeds
+    "red kidney bean", "white pea bean", "soybean", "green mung", "mung bean",
+    "mixed bean", "bean", "beans",
+    "white sesame", "red sesame", "mixed sesame", "sesame",
+    
+    # Units
+    "quintal", "kg", "kilogram",
+    
+    # Amharic agricultural terms
+    "ጤፍ", "ነጭ ጤፍ", "ቀይ ጤፍ", "ድርብ ጤፍ",  # Teff
+    "ስንዴ", "ነጭ ስንዴ",  # Wheat
+    "በቆሎ", "ነጭ በቆሎ",  # Maize
+    "ሽንኩርት", "ቲማቲም", "ድንች", "ነጭ ሽንኩርት", "በርበሬ",  # Vegetables
+    "አቮካዶ", "ማንጎ", "ሙዝ", "አናናስ",  # Fruits
+    "ማሽላ", "ሩዝ", "ገብስ",  # Grains
+    "ባቄላ", "ቀይ ባቄላ", "ነጭ ባቄላ", "አኩሪ አተር", "ማሽ",  # Legumes
+    "ሰሊጥ", "ነጭ ሰሊጥ", "ቀይ ሰሊጥ", "ድርብ ሰሊጥ",  # Sesame
+    "በሬ", "ላም", "ጥጃ", "ኮርማ", "ጊደር",  # Cattle
+    "ፍየል", "በግ", "ግመል",  # Livestock
+    "ዶሮ", "አውራ ዶሮ", "እንቁላል",  # Poultry
+    "ኩንታል", "ኪሎ",  # Units
+    "ዋጋ", "ገበያ", "መግዛት", "መሸጥ",  # Market terms
+]
+
+
 class ModerationClassifier:
     """
     Unified moderation classifier for Amharic and English.
     Lazy-loads models on first use to save memory.
+    Includes whitelist for agricultural terms.
     """
     
     AMHARIC_MODEL = "uhhlt/amharic-hate-speech"
@@ -42,6 +99,36 @@ class ModerationClassifier:
         # Ethiopic Unicode range: U+1200 to U+137F
         ethiopic_pattern = re.compile(r'[\u1200-\u137F]')
         return bool(ethiopic_pattern.search(text))
+    
+    def _is_whitelisted(self, text: str) -> bool:
+        """
+        Check if text contains whitelisted agricultural terms.
+        Returns True if text appears to be agricultural content.
+        """
+        text_lower = text.lower()
+        
+        # Count how many whitelist terms appear
+        matches = sum(1 for term in AGRICULTURAL_WHITELIST if term.lower() in text_lower)
+        
+        # If 2+ agricultural terms found, likely agricultural content
+        if matches >= 2:
+            return True
+        
+        # Also check for common agricultural question patterns
+        agri_patterns = [
+            r'\b(price|cost|buy|sell|market)\b.*\b(teff|wheat|maize|goat|sheep|cow|ox)\b',
+            r'\b(teff|wheat|maize|goat|sheep|cow|ox)\b.*\b(price|cost|buy|sell|market)\b',
+            r'\bዋጋ\b',  # Amharic "price"
+            r'\bገበያ\b',  # Amharic "market"
+            r'\bመግዛት\b',  # Amharic "buy"
+            r'\bመሸጥ\b',  # Amharic "sell"
+        ]
+        
+        for pattern in agri_patterns:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                return True
+        
+        return False
     
     def _load_amharic_model(self):
         """Lazy load Amharic classifier."""
@@ -85,7 +172,17 @@ class ModerationClassifier:
         Returns:
             ModerationResult with is_safe, label, score, reason
         """
-        # Determine language
+        # First check whitelist - agricultural content should pass through
+        if self._is_whitelisted(text):
+            logger.debug(f"Whitelisted agricultural content: {text[:50]}...")
+            return ModerationResult(
+                is_safe=True,
+                label="Whitelisted",
+                score=1.0,
+                reason="Agricultural content - whitelisted"
+            )
+        
+        # Determine language and classify
         if lang == "am" or (lang is None and self._is_amharic(text)):
             return self._classify_amharic(text)
         else:
@@ -167,3 +264,4 @@ class ModerationClassifier:
 
 # Global singleton instance
 moderation_classifier = ModerationClassifier()
+
