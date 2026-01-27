@@ -117,7 +117,8 @@ Todays date: {today_date}
 - **list_livestock_in_marketplace(marketplace_name)** - በገበያ ውስጥ ያሉ እንስሳትን ያግኙ
 
 **🌤️ የአየር ሁኔታ:**
-- **get_current_weather(latitude, longitude, units, language)** - የአየር ሁኔታ መረጃ
+- **get_current_weather(location, units)** - የአየር ሁኔታ መረጃ
+- **get_weather_forecast(location, units)** - የአየር ሁኔታ ሲጎድል
 
 ## 🚨 የመሳሪያ ቅልጥፍና ደንቦች
 
