@@ -142,13 +142,13 @@ def to_ethiopian(year, month, date):
         ethiopian_month = order[m]
 
         return (ethiopian_year, ethiopian_month, ethiopian_date)
-    
+
 
 def get_ethiopian_date_str() -> str:
     """Get today's date in Ethiopian calendar format with Amharic month names.
-    
+
     Uses the local to_ethiopian function for conversion.
-    
+
     Returns:
         str: Date in format "ጥር 19, 2018"
     """
@@ -168,10 +168,10 @@ def get_ethiopian_date_str() -> str:
         "ነሐሴ",    # 12 - Nehase
         "ጳጉሜ",    # 13 - Pagume
     ]
-    
+
     today = datetime.now(pytz.timezone("Africa/Addis_Ababa"))
     eth_year, eth_month, eth_day = to_ethiopian(today.year, today.month, today.day)
-    
+
     return f" {ethiopian_months[eth_month - 1]} {eth_day}/{eth_year}"
 
 
