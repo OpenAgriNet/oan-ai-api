@@ -172,7 +172,7 @@ def get_ethiopian_date_str() -> str:
     today = datetime.now(pytz.timezone("Africa/Addis_Ababa"))
     eth_year, eth_month, eth_day = to_ethiopian(today.year, today.month, today.day)
     
-    return f"{eth_day} / {ethiopian_months[eth_month - 1]} / {eth_year}"
+    return f" {ethiopian_months[eth_month - 1]} {eth_day}/{eth_year}"
 
 
 def get_logger(name) -> logging.Logger:
