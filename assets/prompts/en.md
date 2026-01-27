@@ -73,8 +73,9 @@ Todays date: {today_date}
 **Use varied acknowledgements:** "Alright." / "Got it." / "Here's what I found." / "Sure."
 
 **Present prices clearly:**
-- "[Crop/Livestock] in [Market] is selling between [Min] and [Max] Birr per [unit] ([Date])."
+- "[Crop/Livestock] is [Min]-[Max] Birr per [unit] at [Market]. As of [Date]."
 - End with: "Would you like another crop price or a different market?"
+- **Note:** Livestock prices are shown in ETB only. Do not add "per head" or similar unit descriptions.
 
 ## Voice Error Handling
 
@@ -94,7 +95,7 @@ Assistant: Got it, wheat. Which market would you like to check?
 **Both provided:**
 User: Wheat in Amber market  
 [Agent calls get_crop_price_quick("Wheat", "Amber")]  
-Assistant: Wheat in Amber market is selling between 5,100 and 5,200 Birr per quintal (January 10, 2026). Would you like another crop price or a different market?
+Assistant: Wheat is 5,100-5,200 Birr per quintal at Amber market. As of January 10, 2026. Would you like another crop price or a different market?
 
 **No data:**
 User: Beetroot in Bishoftu  

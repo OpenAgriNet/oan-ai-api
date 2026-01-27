@@ -143,6 +143,7 @@ async def get_livestock_price_in_marketplace(
                 MarketPrice.modal_price,
                 MarketPrice.price_date,
                 MarketPrice.unit,
+                MarketPrice.meta_data,
                 Livestock.name_amharic.label('livestock_name_amharic'),
                 Livestock.name.label('livestock_name'),
                 LivestockBreed.name.label('breed_name'),
@@ -171,6 +172,37 @@ async def get_livestock_price_in_marketplace(
         price_data_breeds = {}
         for price_row in price_data_list:
             breed_key = price_row.breed_name or "Default"
+            
+            # Build variations info from meta_data
+            variations_info = ""
+            if price_row.meta_data and price_row.meta_data.get("variations"):
+                variations = price_row.meta_data["variations"]
+                var_details = []
+                for var in variations:
+                    parts = []
+                    if var.get("gender"):
+                        parts.append(var["gender"])
+                    if var.get("age"):
+                        parts.append(var["age"])
+                    if var.get("grade"):
+                        parts.append(f"Grade: {var['grade']}")
+                    if var.get("location"):
+                        parts.append(f"From: {var['location']}")
+                    
+                    price_range = ""
+                    if var.get("pmin") and var.get("pmax"):
+                        price_range = f" ({var['pmin']}-{var['pmax']} ETB)"
+                    elif var.get("pmin"):
+                        price_range = f" ({var['pmin']} ETB)"
+                    elif var.get("pmax"):
+                        price_range = f" ({var['pmax']} ETB)"
+                    
+                    if parts:
+                        var_details.append(f"  - {', '.join(parts)}{price_range}")
+                
+                if var_details:
+                    variations_info = "\n* Variations:\n" + "\n".join(var_details)
+            
             price_data_breeds[breed_key] = (
                 f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace.name}:\n\n"
                 f"* Breed: {price_row.breed_name or 'N/A'}" +
@@ -178,7 +210,8 @@ async def get_livestock_price_in_marketplace(
                 f"* Min Price: {price_row.min_price or 'N/A'} ETB\n"
                 f"* Max Price: {price_row.max_price or 'N/A'} ETB\n"
                 f"* Avg Price: {price_row.avg_price or 'N/A'} ETB\n"
-                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}"
+                f"{variations_info}\n"
                 f"* Source: https://nmis.et/"
             )
 
@@ -215,6 +248,7 @@ async def compare_livestock_prices_nearby(
                 MarketPrice.avg_price,
                 MarketPrice.price_date,
                 MarketPrice.unit,
+                MarketPrice.meta_data,
                 Livestock.name.label('livestock_name'),
                 LivestockBreed.name.label('breed_name')
             )
@@ -249,11 +283,40 @@ async def compare_livestock_prices_nearby(
         lines = [f"{livestock_type} price comparison:\n"]
 
         for idx, market in enumerate(markets, 1):
+            # Build variations info from meta_data
+            variations_info = ""
+            if market.meta_data and market.meta_data.get("variations"):
+                variations = market.meta_data["variations"]
+                var_details = []
+                for var in variations:
+                    parts = []
+                    if var.get("gender"):
+                        parts.append(var["gender"])
+                    if var.get("age"):
+                        parts.append(var["age"])
+                    if var.get("grade"):
+                        parts.append(f"Grade: {var['grade']}")
+                    
+                    price_range = ""
+                    if var.get("pmin") and var.get("pmax"):
+                        price_range = f" ({var['pmin']}-{var['pmax']} ETB)"
+                    elif var.get("pmin"):
+                        price_range = f" ({var['pmin']} ETB)"
+                    elif var.get("pmax"):
+                        price_range = f" ({var['pmax']} ETB)"
+                    
+                    if parts:
+                        var_details.append(f"     - {', '.join(parts)}{price_range}")
+                
+                if var_details:
+                    variations_info = "\n   * Variations:\n" + "\n".join(var_details)
+            
             lines.append(
                 f"{idx}. **{market.name}** ({market.region})\n"
                 f"   * Avg: {market.avg_price} ETB\n"
                 f"   * Range: {market.min_price} - {market.max_price} ETB\n"
-                f"   * As of Date: {market.price_date.strftime('%Y-%m-%d')}\n"
+                f"   * As of Date: {market.price_date.strftime('%Y-%m-%d')}"
+                f"{variations_info}\n"
                 f"   * Source: https://nmis.et/"
             )
 
@@ -378,6 +441,7 @@ async def get_livestock_price_quick(
                 MarketPrice.modal_price,
                 MarketPrice.price_date,
                 MarketPrice.unit,
+                MarketPrice.meta_data,
                 Livestock.name_amharic.label('livestock_name_amharic'),
                 Livestock.name.label('livestock_name'),
                 LivestockBreed.name.label('breed_name'),
@@ -407,6 +471,37 @@ async def get_livestock_price_quick(
         price_data_breeds = {}
         for price_row in price_data_list:
             breed_key = price_row.breed_name or "Default"
+            
+            # Build variations info from meta_data
+            variations_info = ""
+            if price_row.meta_data and price_row.meta_data.get("variations"):
+                variations = price_row.meta_data["variations"]
+                var_details = []
+                for var in variations:
+                    parts = []
+                    if var.get("gender"):
+                        parts.append(var["gender"])
+                    if var.get("age"):
+                        parts.append(var["age"])
+                    if var.get("grade"):
+                        parts.append(f"Grade: {var['grade']}")
+                    if var.get("location"):
+                        parts.append(f"From: {var['location']}")
+                    
+                    price_range = ""
+                    if var.get("pmin") and var.get("pmax"):
+                        price_range = f" ({var['pmin']}-{var['pmax']} ETB)"
+                    elif var.get("pmin"):
+                        price_range = f" ({var['pmin']} ETB)"
+                    elif var.get("pmax"):
+                        price_range = f" ({var['pmax']} ETB)"
+                    
+                    if parts:
+                        var_details.append(f"  - {', '.join(parts)}{price_range}")
+                
+                if var_details:
+                    variations_info = "\n* Variations:\n" + "\n".join(var_details)
+            
             price_data_breeds[breed_key] = (
                 f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
                 f"* Breed: {price_row.breed_name or 'N/A'}" +
@@ -415,7 +510,8 @@ async def get_livestock_price_quick(
                 f"* Max Price: {price_row.max_price or 'N/A'} ETB\n"
                 f"* Avg Price: {price_row.avg_price or 'N/A'} ETB\n"
                 f"* Modal Price: {price_row.modal_price or 'N/A'} ETB\n"
-                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}"
+                f"{variations_info}\n"
                 f"* Source: https://nmis.et/"
             )
         

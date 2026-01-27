@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Tool
 from agents.tools.maps import forward_geocode
 from helpers.utils import get_logger
-
+from app.core.cache import cache
 logger = get_logger(__name__)
 
 CURRENT_WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
@@ -16,6 +16,7 @@ FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
 API_KEY = os.getenv("OPENWEATHERMAP_API_KEY", "")
 TIMEOUT = 10.0
+WEATHER_CACHE_TTL = 15 * 60  # 15 minutes
 
 # -----------------------
 # Current Weather Tool
@@ -45,6 +46,18 @@ async def get_current_weather(input: CurrentWeatherInput) -> CurrentWeather:
     Use this tool ONLY when the user asks about the weather right now or current conditions."""    
     try:
         location = await forward_geocode(input.location)
+        
+        # Create cache key based on location and units
+        cache_key = f"weather:current:{location.latitude}:{location.longitude}:{input.units}"
+        
+        # Try to get from cache first
+        cached_data = await cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Cache HIT for current weather: {cache_key}")
+            return CurrentWeather(**cached_data)
+        
+        logger.info(f"Cache MISS for current weather: {cache_key}")
+        
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             response = await client.get(
                 CURRENT_WEATHER_URL,
@@ -60,7 +73,8 @@ async def get_current_weather(input: CurrentWeatherInput) -> CurrentWeather:
             data = response.json()
             logger.info(f"Fetched current weather for ({location.latitude}, {location.longitude}, units={input.units}, language=en)")
             logger.info(f"Current weather data: {data}")
-            return CurrentWeather(
+            
+            weather = CurrentWeather(
                 timestamp=data["dt"],
                 temperature=data["main"]["temp"],
                 feels_like=data["main"]["feels_like"],
@@ -73,6 +87,12 @@ async def get_current_weather(input: CurrentWeatherInput) -> CurrentWeather:
                 description=data["weather"][0]["description"],
                 source="OpenWeatherMap",
             )
+            
+            # Cache the result
+            await cache.set(cache_key, weather.model_dump(), ttl=WEATHER_CACHE_TTL)
+            logger.info(f"Cached current weather for {WEATHER_CACHE_TTL}s: {cache_key}")
+            
+            return weather
     except httpx.HTTPStatusError as e:
         logger.error(f"Weather API error: {e.response.status_code} - {e.response.text}")
         raise Exception(f"Unable to fetch weather data: {e.response.status_code}")
@@ -127,6 +147,18 @@ async def get_weather_forecast(input: ForecastInput) -> str:
     Returns a human-readable summary optimized for quick understanding."""
     try:
         location = await forward_geocode(input.location)
+        
+        # Create cache key based on location and units
+        cache_key = f"weather:forecast:{location.latitude}:{location.longitude}:{input.units}"
+        
+        # Try to get from cache first
+        cached_data = await cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Cache HIT for weather forecast: {cache_key}")
+            return cached_data
+        
+        logger.info(f"Cache MISS for weather forecast: {cache_key}")
+        
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             response = await client.get(
                 FORECAST_URL,
@@ -181,4 +213,9 @@ async def get_weather_forecast(input: ForecastInput) -> str:
     summary = "\n".join(lines)
     logger.info(summary)
     logger.info(f"Generated weather forecast summary for {len(daily_map)} days")
+    
+    # Cache the result
+    await cache.set(cache_key, summary, ttl=WEATHER_CACHE_TTL)
+    logger.info(f"Cached weather forecast for {WEATHER_CACHE_TTL}s: {cache_key}")
+    
     return summary
