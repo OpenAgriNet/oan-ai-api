@@ -170,7 +170,7 @@ async def get_weather_forecast(input: ForecastInput) -> str:
         rain_prob = max(i.get("pop", 0) for i in items) * 100
         description = items[len(items)//2]["weather"][0]["description"]  # mid-day description
         
-        date_str = date.strftime("%a %d %b")
+        date_str = date.strftime("%a %d %b %Y")
         min_t, max_t = round(min(temps)), round(max(temps))
         avg_humidity = round(sum(humidities) / len(humidities))
         avg_wind = round(sum(winds) / len(winds), 1)

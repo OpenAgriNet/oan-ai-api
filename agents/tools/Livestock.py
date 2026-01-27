@@ -175,10 +175,10 @@ async def get_livestock_price_in_marketplace(
                 f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace.name}:\n\n"
                 f"* Breed: {price_row.breed_name or 'N/A'}" +
                 (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
-                f"* Min Price: {price_row.min_price or 'N/A'} ETB/{price_row.unit or 'Head'}\n"
-                f"* Max Price: {price_row.max_price or 'N/A'} ETB/{price_row.unit or 'Head'}\n"
-                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB/{price_row.unit or 'Head'}\n"
-                f"* Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                f"* Min Price: {price_row.min_price or 'N/A'} ETB\n"
+                f"* Max Price: {price_row.max_price or 'N/A'} ETB\n"
+                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB\n"
+                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
                 f"* Source: https://nmis.et/"
             )
 
@@ -251,9 +251,9 @@ async def compare_livestock_prices_nearby(
         for idx, market in enumerate(markets, 1):
             lines.append(
                 f"{idx}. **{market.name}** ({market.region})\n"
-                f"   * Avg: {market.avg_price} ETB/{market.unit or 'Head'}\n"
+                f"   * Avg: {market.avg_price} ETB\n"
                 f"   * Range: {market.min_price} - {market.max_price} ETB\n"
-                f"   * Date: {market.price_date.strftime('%Y-%m-%d')}\n"
+                f"   * As of Date: {market.price_date.strftime('%Y-%m-%d')}\n"
                 f"   * Source: https://nmis.et/"
             )
 
@@ -411,11 +411,11 @@ async def get_livestock_price_quick(
                 f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
                 f"* Breed: {price_row.breed_name or 'N/A'}" +
                 (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
-                f"* Min Price: {price_row.min_price or 'N/A'} ETB/{price_row.unit or 'Head'}\n"
-                f"* Max Price: {price_row.max_price or 'N/A'} ETB/{price_row.unit or 'Head'}\n"
-                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB/{price_row.unit or 'Head'}\n"
-                f"* Modal Price: {price_row.modal_price or 'N/A'} ETB/{price_row.unit or 'Head'}\n"
-                f"* Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                f"* Min Price: {price_row.min_price or 'N/A'} ETB\n"
+                f"* Max Price: {price_row.max_price or 'N/A'} ETB\n"
+                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB\n"
+                f"* Modal Price: {price_row.modal_price or 'N/A'} ETB\n"
+                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
                 f"* Source: https://nmis.et/"
             )
         

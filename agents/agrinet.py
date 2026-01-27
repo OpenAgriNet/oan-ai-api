@@ -1,5 +1,5 @@
 from pydantic_ai import Agent, RunContext
-from helpers.utils import get_prompt, get_today_date_str
+from helpers.utils import get_prompt, get_today_date_str, get_ethiopian_date_str
 from agents.models import LLM_MODEL
 from agents.tools import TOOLS
 from agents.deps import FarmerContext
@@ -26,4 +26,6 @@ agrinet_agent = Agent(
 def dynamic_system_prompt(ctx: RunContext[FarmerContext]) -> str:
     """Dynamic system prompt based on context"""
     lang = ctx.deps.lang_code if ctx.deps else "en"
-    return get_prompt(lang, context={'today_date': get_today_date_str()})
+    # Use Ethiopian calendar date for Amharic, Gregorian for others
+    today_date = get_ethiopian_date_str() if lang == "am" else get_today_date_str()
+    return get_prompt(lang, context={'today_date': today_date})

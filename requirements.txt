@@ -79,3 +79,6 @@ geopy
 rapidfuzz
 fastapi
 aiocache
+
+# data conversion
+convertdate
