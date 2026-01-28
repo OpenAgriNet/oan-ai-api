@@ -2,7 +2,7 @@
 from pydantic_ai import RunContext
 from agents.deps import FarmerContext
 from app.database import async_session_maker
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, literal
 from app.models.market import Crop, CropVariety, MarketPrice, Marketplace
 from typing import List, Optional, Tuple, Union
 from sqlalchemy.orm import joinedload
@@ -161,7 +161,15 @@ async def get_crop_price_in_marketplace(
                     func.lower(Crop.name) == crop_name.lower(),
                     func.lower(Crop.name).contains(crop_name.lower()),
                     func.lower(Crop.name_amharic) == crop_name.lower(),
-                    func.lower(Crop.name_amharic).contains(crop_name.lower())
+                    func.lower(Crop.name_amharic).contains(crop_name.lower()),
+                    # Add Variety Search to handle specific queries like "White Teff"
+                    func.lower(CropVariety.name) == crop_name.lower(),
+                    func.lower(CropVariety.name).contains(crop_name.lower()),
+                    func.lower(CropVariety.name_amharic) == crop_name.lower(),
+                    func.lower(CropVariety.name_amharic).contains(crop_name.lower()),
+                    # Inverted: Query contains Crop/Variety Name. Use strpos > 0
+                    func.strpos(literal(crop_name.lower()), func.lower(Crop.name)) > 0,
+                    func.strpos(literal(crop_name.lower()), func.lower(Crop.name_amharic)) > 0
                 ),
                 MarketPrice.price_date >= (func.current_date() - 364),
                 Crop.category == "agricultural"
@@ -188,7 +196,9 @@ async def get_crop_price_in_marketplace(
                 f"* Source: https://nmis.et/"
             )
 
-        return "\n\n".join(price_data_varieties.values())
+        result_str = "\n\n".join(price_data_varieties.values())
+        logger.info(f"💰 Tool Result for {marketplace.name}/{crop_name}: {result_str[:100]}...")
+        return result_str
 
 
 @log_execution_time
@@ -294,13 +304,17 @@ async def get_crop_price_quick(
     Returns:
         Price information or error message if marketplace/crop not found
     """
-    logger.info(f"get_crop_price_quick: crop={crop_name}, marketplace={marketplace_name}")
+    logger.info(f"get_crop_price_quick: crop={repr(crop_name)}, marketplace={repr(marketplace_name)}")
     
+    # Defensive trimming
+    crop_name = crop_name.strip()
+    marketplace_name = marketplace_name.strip()
+
     # Validate parameters - check for vague/generic inputs
     vague_terms = ['crop', 'the crop', 'it', 'that', 'this', 'something', 'anything', 'price', 'market', 'the market']
     
-    crop_lower = crop_name.lower().strip()
-    market_lower = marketplace_name.lower().strip()
+    crop_lower = crop_name.lower()
+    market_lower = marketplace_name.lower()
     
     if crop_lower in vague_terms or len(crop_lower) < 3:
         return "ERROR: I need to know which specific crop you're asking about. Please tell me the crop name (e.g., wheat, teff, barley)."
@@ -391,9 +405,47 @@ async def get_crop_price_quick(
         result = await db.execute(stmt)
         price_data_list = result.all()
 
+        if not price_data_list and region:
+            logger.info(f"get_crop_price_quick: no price data with region='{region}'. Retrying without region...")
+            # Fallback: Try getting marketplace without region constraint
+            marketplace, error = await _get_marketplace(db, marketplace_name, None)
+            if not error and marketplace:
+                 # Re-run query with new marketplace ID
+                 # We need to rebuild the statement because marketplace.marketplace_id changed
+                 stmt = (
+                    select(
+                        MarketPrice.min_price,
+                        MarketPrice.max_price,
+                        MarketPrice.avg_price,
+                        MarketPrice.modal_price,
+                        MarketPrice.price_date,
+                        MarketPrice.unit,
+                        Crop.name_amharic.label('crop_name_amharic'),
+                        Crop.name.label('crop_name'),
+                        CropVariety.name.label('variety_name'),
+                        CropVariety.name_amharic.label('variety_name_amharic')
+                    )
+                    .join(Crop, MarketPrice.crop_id == Crop.crop_id)
+                    .outerjoin(CropVariety, MarketPrice.variety_id == CropVariety.variety_id)
+                    .where(
+                        MarketPrice.marketplace_id == marketplace.marketplace_id,
+                        or_(
+                            func.lower(Crop.name) == crop_name.lower(),
+                            func.lower(Crop.name).contains(crop_name.lower()),
+                            func.lower(Crop.name_amharic) == crop_name.lower(),
+                            func.lower(Crop.name_amharic).contains(crop_name.lower())
+                        ),
+                        MarketPrice.price_date >= (func.current_date() - 364),
+                        Crop.category == "agricultural"
+                    )
+                    .order_by(MarketPrice.price_date.desc())
+                )
+                 result = await db.execute(stmt)
+                 price_data_list = result.all()
+
         if not price_data_list:
-            logger.info(f"get_crop_price_quick: no price data")
-            return f"No price data found for '{crop_name}' in {marketplace_name} ({region})."
+            logger.info(f"get_crop_price_quick: no price data (fallback included)")
+            return f"No price data found for '{crop_name}' in {marketplace_name}."
 
         price_data_varieties = {}
         for price_row in price_data_list:
