@@ -39,7 +39,7 @@ services:
   cosdata:
     image: cosdatateam/cosdata:latest
     container_name: oan_cosdata
-    command: ["/opt/cosdata/bin/cosdata", "--admin-key", "${COSDATA_ADMIN_KEY:-admin}"]
+    command: ["/opt/cosdata/bin/cosdata", "--admin-key", "${COSDATA_ADMIN_KEY:-admin}", "--skip-confirmation"]
     ports:
       - "${COSDATA_HTTP_PORT:-8443}:8443"
       - "${COSDATA_GRPC_PORT:-50051}:50051"
