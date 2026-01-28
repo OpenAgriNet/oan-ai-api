@@ -172,7 +172,7 @@ async def get_livestock_price_in_marketplace(
         price_data_breeds = {}
         for price_row in price_data_list:
             breed_key = price_row.breed_name or "Default"
-            
+
             # Build variations info from meta_data
             variations_info = ""
             if price_row.meta_data and price_row.meta_data.get("variations"):
@@ -188,7 +188,7 @@ async def get_livestock_price_in_marketplace(
                         parts.append(f"Grade: {var['grade']}")
                     if var.get("location"):
                         parts.append(f"From: {var['location']}")
-                    
+
                     price_range = ""
                     if var.get("pmin") and var.get("pmax"):
                         price_range = f" ({var['pmin']}-{var['pmax']} ETB)"
@@ -196,13 +196,13 @@ async def get_livestock_price_in_marketplace(
                         price_range = f" ({var['pmin']} ETB)"
                     elif var.get("pmax"):
                         price_range = f" ({var['pmax']} ETB)"
-                    
+
                     if parts:
                         var_details.append(f"  - {', '.join(parts)}{price_range}")
-                
+
                 if var_details:
                     variations_info = "\n* Variations:\n" + "\n".join(var_details)
-            
+
             price_data_breeds[breed_key] = (
                 f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace.name}:\n\n"
                 f"* Breed: {price_row.breed_name or 'N/A'}" +
@@ -296,7 +296,7 @@ async def compare_livestock_prices_nearby(
                         parts.append(var["age"])
                     if var.get("grade"):
                         parts.append(f"Grade: {var['grade']}")
-                    
+
                     price_range = ""
                     if var.get("pmin") and var.get("pmax"):
                         price_range = f" ({var['pmin']}-{var['pmax']} ETB)"
@@ -304,13 +304,13 @@ async def compare_livestock_prices_nearby(
                         price_range = f" ({var['pmin']} ETB)"
                     elif var.get("pmax"):
                         price_range = f" ({var['pmax']} ETB)"
-                    
+
                     if parts:
                         var_details.append(f"     - {', '.join(parts)}{price_range}")
-                
+
                 if var_details:
                     variations_info = "\n   * Variations:\n" + "\n".join(var_details)
-            
+
             lines.append(
                 f"{idx}. **{market.name}** ({market.region})\n"
                 f"   * Avg: {market.avg_price} ETB\n"
@@ -471,7 +471,7 @@ async def get_livestock_price_quick(
         price_data_breeds = {}
         for price_row in price_data_list:
             breed_key = price_row.breed_name or "Default"
-            
+
             # Build variations info from meta_data
             variations_info = ""
             if price_row.meta_data and price_row.meta_data.get("variations"):
@@ -487,7 +487,7 @@ async def get_livestock_price_quick(
                         parts.append(f"Grade: {var['grade']}")
                     if var.get("location"):
                         parts.append(f"From: {var['location']}")
-                    
+
                     price_range = ""
                     if var.get("pmin") and var.get("pmax"):
                         price_range = f" ({var['pmin']}-{var['pmax']} ETB)"
@@ -495,13 +495,13 @@ async def get_livestock_price_quick(
                         price_range = f" ({var['pmin']} ETB)"
                     elif var.get("pmax"):
                         price_range = f" ({var['pmax']} ETB)"
-                    
+
                     if parts:
                         var_details.append(f"  - {', '.join(parts)}{price_range}")
-                
+
                 if var_details:
                     variations_info = "\n* Variations:\n" + "\n".join(var_details)
-            
+
             price_data_breeds[breed_key] = (
                 f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
                 f"* Breed: {price_row.breed_name or 'N/A'}" +

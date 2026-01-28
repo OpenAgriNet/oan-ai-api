@@ -454,7 +454,7 @@ class ConversationPipeline:
                 try:
                     # Try to receive either bytes (audio) or text (JSON commands)
                     message = await self.ws_manager.websocket.receive()
-                    
+
                     if "bytes" in message:
                         # Audio data
                         data = message["bytes"]
@@ -469,7 +469,7 @@ class ConversationPipeline:
                             )
                         except asyncio.TimeoutError:
                             logger.warning("Audio queue full, dropping frame")
-                    
+
                     elif "text" in message:
                         # JSON message (e.g., text query from clicking suggestion)
                         import json
@@ -479,12 +479,12 @@ class ConversationPipeline:
                                 # User sent text message (clicked suggestion)
                                 text_query = data["text"]
                                 logger.info(f"Received text message: '{text_query}'")
-                                
+
                                 # Process as if it was transcribed speech
                                 # Put directly into speech queue
                                 turn_id = await self.state.increment_turn()
                                 await self.speech_queue.put((text_query, turn_id))
-                                
+
                                 # Send transcription event to frontend
                                 await self.ws_manager.send_json({
                                     "type": "transcription",
@@ -1067,7 +1067,7 @@ class ConversationPipeline:
                         suggestions_task = None
                         import os
                         enable_suggestions = os.getenv("ENABLE_SUGGESTIONS", "false").lower() == "true"
-                        
+
                         if enable_suggestions:
                             try:
                                 from agents.suggestions import suggestions_agent
@@ -1077,7 +1077,7 @@ class ConversationPipeline:
                                     for msg in history[-6:] if isinstance(msg, dict) and msg.get('role') in ['user', 'assistant']
                                 ])
                                 suggestions_prompt = f"Conversation History:\n{history_text}\n\nCurrent Query: {text}\n\nGenerate Suggestions In: English"
-                                
+
                                 # Start suggestions agent in background
                                 suggestions_task = asyncio.create_task(
                                     suggestions_agent.run(suggestions_prompt)
@@ -1087,7 +1087,7 @@ class ConversationPipeline:
                                 logger.warning(f"[Turn {turn_id}] Failed to start suggestions agent: {e}")
                         else:
                             logger.debug(f"[Turn {turn_id}] Suggestions disabled via ENABLE_SUGGESTIONS env var")
-                        
+
                         # Instructions for natural, conversational responses with strong context awareness
                         instructions = (
                             "⚠️ FORBIDDEN PHRASES - NEVER SAY:\n"
@@ -1122,7 +1122,7 @@ class ConversationPipeline:
                             "8. Keep responses short and conversational for voice\n"
                             "9. Use DIGITS for all numbers (5,100) - easier to read and TTS will convert"
                         )
-                        
+
                         stream_context = agrinet_agent.run_stream(
                             user_prompt=text,
                             message_history=limited_history,
@@ -1140,7 +1140,7 @@ class ConversationPipeline:
                                     logger.debug(f"[Turn {turn_id}] Received chunk from LLM: '{chunk[:30] if chunk else 'None'}...'")
                                     # Check for interruption - but NOT for amendments or noise
                                     current_turn = await self.state.get_turn_id()
-                                    
+
                                     if current_turn != turn_id:
                                         # Check if the newer turn should preempt this one
                                         # Don't preempt if newer turn is:
@@ -1153,17 +1153,17 @@ class ConversationPipeline:
                                                 turn_info = self.turn_timings[check_turn]
                                                 is_amendment = turn_info.get("is_amendment", False)
                                                 has_transcription = turn_info.get("has_transcription", None)
-                                                
+
                                                 # Preempt only if newer turn has real content and is not amendment
                                                 if has_transcription is True and not is_amendment:
                                                     should_preempt = True
                                                     break
-                                        
+
                                         if should_preempt:
                                             logger.info(f"LLM preempted (turn {turn_id} -> {current_turn})")
                                             break
                                         # else: continue processing - newer turns are noise/amendments/pending
-                                    
+
                                     if self.state.should_stop:
                                         break
 
@@ -1177,7 +1177,7 @@ class ConversationPipeline:
                                             if end_idx > 0:
                                                 intermediate_msg = chunk[start_idx + 14:end_idx]  # Extract from [INTERMEDIATE:message]
                                                 logger.info(f"🔵 [Voice] LLM provided intermediate message: '{intermediate_msg}'")
-                                                
+
                                                 # Send as WebSocket message
                                                 await self.ws_manager.send_json({
                                                     "type": "intermediate",
@@ -1185,7 +1185,7 @@ class ConversationPipeline:
                                                     "turn_id": turn_id
                                                 })
                                                 logger.info(f"🔵 [Voice] Sent intermediate WebSocket message")
-                                                
+
                                                 # Synthesize and send intermediate audio
                                                 try:
                                                     intermediate_audio = await self.tts_provider._synthesize_chunk(intermediate_msg, self.state.lang)
@@ -1194,14 +1194,14 @@ class ConversationPipeline:
                                                         logger.info(f"🔵 [Voice] Intermediate audio sent for turn {turn_id}")
                                                 except Exception as e:
                                                     logger.warning(f"Failed to synthesize intermediate audio: {e}")
-                                                
+
                                                 # Remove the marker from chunk and continue with rest
                                                 chunk = chunk[:start_idx] + chunk[end_idx + 1:]
                                                 logger.info(f"🔵 [Voice] Chunk after removing marker: '{chunk}'")
                                                 if not chunk.strip():
                                                     logger.info(f"🔵 [Voice] Chunk empty after removing marker, continuing to next chunk")
                                                     continue  # Skip if chunk is now empty after removing marker
-                                        
+
                                         # Handle status messages (show to user but don't send to TTS)
                                         if chunk.startswith("[STATUS:"):
                                             # Extract status message
@@ -1213,7 +1213,7 @@ class ConversationPipeline:
                                                 "turn_id": turn_id
                                             })
                                             continue  # Don't add to collected_text or TTS queue
-                                        
+
                                         # Handle tool events (don't send to TTS, just notify frontend)
                                         elif chunk.startswith("[TOOL:"):
                                             # Tool call started - notify frontend for progress
@@ -1225,7 +1225,7 @@ class ConversationPipeline:
                                                 "turn_id": turn_id
                                             })
                                             continue  # Don't add to collected_text or TTS queue
-                                        
+
                                         elif chunk == "[TOOL_DONE]":
                                             # Tool completed - notify frontend
                                             await self.ws_manager.send_json({
@@ -1233,7 +1233,7 @@ class ConversationPipeline:
                                                 "turn_id": turn_id
                                             })
                                             continue  # Don't add to collected_text or TTS queue
-                                        
+
                                         # Regular text chunk - send to TTS and frontend
                                         collected_text += chunk
                                         chunk_count += 1
@@ -1257,7 +1257,7 @@ class ConversationPipeline:
                                             logger.info(f"[Turn {turn_id}] Chunk #{chunk_count} sent to frontend")
                                         except asyncio.TimeoutError:
                                             logger.warning("LLM queue full, dropping chunk")
-                            
+
                             except (StopAsyncIteration, GeneratorExit, RuntimeError) as e:
                                 # Handle async generator cleanup errors
                                 # These occur when breaking out of async for loop during stream preemption
