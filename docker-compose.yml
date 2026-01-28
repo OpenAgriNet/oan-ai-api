@@ -36,6 +36,27 @@ services:
     networks:
       - oan_network
 
+  cosdata:
+    image: cosdatateam/cosdata:latest
+    container_name: oan_cosdata
+    command: ["/opt/cosdata/bin/cosdata", "--admin-key", "${COSDATA_ADMIN_KEY:-admin}"]
+    ports:
+      - "${COSDATA_HTTP_PORT:-8443}:8443"
+      - "${COSDATA_GRPC_PORT:-50051}:50051"
+    volumes:
+      - cosdata_data:/opt/cosdata/data
+    environment:
+      - COSDATA_HOME=/opt/cosdata
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-k", "https://localhost:8443/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - oan_network
+
   app:
     build: .
     container_name: oan_app
@@ -43,6 +64,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      cosdata:
         condition: service_healthy
     ports:
       - "8000:8000"
@@ -76,6 +99,12 @@ services:
       MARQO_ENDPOINT_URL: ${MARQO_ENDPOINT_URL}
       MARQO_INDEX_NAME: ${MARQO_INDEX_NAME}
 
+      # Vector DB (Cosdata)
+      COSDATA_HOST: cosdata
+      COSDATA_HTTP_PORT: 8443
+      COSDATA_GRPC_PORT: 50051
+      COSDATA_ADMIN_KEY: ${COSDATA_ADMIN_KEY:-admin}
+
       # BAP Configuration
       BAP_ID: ${BAP_ID}
       BAP_URI: ${BAP_URI}
@@ -105,3 +134,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  cosdata_data:

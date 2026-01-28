@@ -48,9 +48,11 @@ When you run `docker-compose up`, the following happens automatically:
 
 1. **PostgreSQL Container** starts and initializes
 2. **Redis Container** starts and initializes
-3. **Python App Container** starts and:
+3. **Cosdata Container** starts (vector database for RAG)
+4. **Python App Container** starts and:
    - Waits for PostgreSQL to be ready
    - Waits for Redis to be ready
+   - Waits for Cosdata to be ready
    - Runs database migrations using Alembic
    - **Runs all data scrapers** (`python scripts/run_all_scrapers.py`)
    - Starts the FastAPI application on port 8000
@@ -83,6 +85,15 @@ docker-compose logs -f redis
 - **Container**: `oan_redis`
 - **Port**: 6379 (accessible from host at localhost:6379)
 - **Data persistence**: Stored in `redis_data` volume
+
+### Cosdata (Vector Database)
+- **Container**: `oan_cosdata`
+- **Ports**:
+  - HTTP API: 8443 (accessible from host at localhost:8443)
+  - gRPC: 50051 (accessible from host at localhost:50051)
+- **Default admin key**: `admin` (configurable via `COSDATA_ADMIN_KEY`)
+- **Data persistence**: Stored in `cosdata_data` volume
+- **Purpose**: Vector database for RAG (Retrieval-Augmented Generation) functionality
 
 ### FastAPI Application
 - **Container**: `oan_app`
@@ -127,6 +138,16 @@ docker exec -it oan_postgres psql -U postgres -d oan
 docker exec -it oan_redis redis-cli
 ```
 
+### Check Cosdata health
+```bash
+curl -k https://localhost:8443/health
+```
+
+### Access Cosdata logs
+```bash
+docker-compose logs -f cosdata
+```
+
 ### Run a command in app container
 ```bash
 docker exec -it oan_app /bin/bash
@@ -160,6 +181,12 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/oan
 # Redis (auto-set from docker-compose)
 REDIS_HOST=redis
 REDIS_PORT=6379
+
+# Cosdata Vector DB (auto-set from docker-compose)
+COSDATA_HOST=cosdata
+COSDATA_HTTP_PORT=8443
+COSDATA_GRPC_PORT=50051
+COSDATA_ADMIN_KEY=admin
 
 # API Keys (must be set in .env)
 MEITY_API_KEY_VALUE=
@@ -248,6 +275,18 @@ docker-compose logs redis
 docker exec -it oan_redis redis-cli ping
 ```
 
+### Cosdata connection errors
+```bash
+# Verify Cosdata is healthy
+docker-compose ps
+
+# Check Cosdata logs
+docker-compose logs cosdata
+
+# Test connection (uses HTTPS with self-signed cert)
+curl -k https://localhost:8443/health
+```
+
 ### Scrapers failing
 ```bash
 # Check full logs
@@ -261,8 +300,24 @@ docker exec -it oan_app python scripts/run_all_scrapers.py -v
 ```
 
 ### Port conflicts
-If port 8000, 5432, or 6379 are already in use, modify `docker-compose.yml`:
+If ports are already in use, modify via environment variables in `.env`:
 
+```bash
+# Application port (default: 8000)
+# Modify in docker-compose.yml ports section
+
+# PostgreSQL port (default: 5432)
+DB_PORT=5433
+
+# Redis port (default: 6379)
+REDIS_PORT=6380
+
+# Cosdata ports (default: 8443, 50051)
+COSDATA_HTTP_PORT=8444
+COSDATA_GRPC_PORT=50052
+```
+
+Or modify `docker-compose.yml` directly:
 ```yaml
 ports:
   - "9000:8000"  # Change 8000 to 9000 on host
@@ -275,7 +330,7 @@ For production deployments:
 1. **Use environment-specific configs**: Create separate `.env.prod` files
 2. **Use secrets management**: Use Docker Secrets or your orchestration platform's secrets
 3. **Set restart policies**: Already configured as `restart: unless-stopped`
-4. **Backup volumes**: Implement backup strategy for `postgres_data` and `redis_data`
+4. **Backup volumes**: Implement backup strategy for `postgres_data`, `redis_data`, and `cosdata_data`
 5. **Set resource limits**: Add memory/CPU limits in compose file
 6. **Use a reverse proxy**: Put Nginx/Traefik in front
 7. **Enable logging**: Configure Docker logging drivers
@@ -287,6 +342,7 @@ For production deployments:
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Redis Documentation](https://redis.io/documentation)
+- [Cosdata Documentation](https://cosdata.io/docs)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
 - [Alembic Documentation](https://alembic.sqlalchemy.org/)

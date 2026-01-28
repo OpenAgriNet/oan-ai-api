@@ -9,6 +9,7 @@ echo "========================================"
 # already ensures postgres and redis are ready
 echo "✓ PostgreSQL is ready (verified by health check)"
 echo "✓ Redis is ready (verified by health check)"
+echo "✓ Cosdata is ready (verified by health check)"
 
 # Run database migrations
 echo ""
