@@ -230,20 +230,8 @@ def search_documents_cosdata(
         logger.info(f"RAG returned {len(search_hits)} results for query: '{query}'")
         logger.debug(f"RAG response preview (first 500 chars):\n{rag_response[:500]}...")
 
-        # Print RAG results to terminal
-        print(f"\n{'='*80}", flush=True)
-        print(f"[RAG] SEARCH RESULTS", flush=True)
-        print(f"{'='*80}", flush=True)
-        print(f"Query: '{query}'", flush=True)
-        print(f"Timing: embedding={embedding_time:.3f}s, search={search_time:.3f}s, total={total_time:.3f}s", flush=True)
-        print(f"Results: {len(search_hits)} documents", flush=True)
-        print(f"{'-'*80}", flush=True)
-        print(f"[RAG] FULL RESPONSE TO LLM:", flush=True)
-        print(f"{'-'*80}", flush=True)
-        print(rag_response, flush=True)
-        print(f"{'='*80}", flush=True)
-        print(f"[RAG] Response length: {len(rag_response)} chars", flush=True)
-        print(f"{'='*80}\n", flush=True)
+        # Print RAG summary to terminal
+        print(f"[RAG] Query: '{query}' | Results: {len(search_hits)} | Time: {total_time:.2f}s | Chars: {len(rag_response)}", flush=True)
 
         return rag_response
 
