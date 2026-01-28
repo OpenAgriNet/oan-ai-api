@@ -186,6 +186,8 @@ async def get_livestock_price_in_marketplace(
                         parts.append(var["age"])
                     if var.get("grade"):
                         parts.append(f"Grade: {var['grade']}")
+                    if var.get("productionType"):
+                        parts.append(f"Type: {var['productionType']}")
                     if var.get("location"):
                         parts.append(f"From: {var['location']}")
 
@@ -203,17 +205,27 @@ async def get_livestock_price_in_marketplace(
                 if var_details:
                     variations_info = "\n* Variations:\n" + "\n".join(var_details)
 
-            price_data_breeds[breed_key] = (
-                f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace.name}:\n\n"
-                f"* Breed: {price_row.breed_name or 'N/A'}" +
-                (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
-                f"* Min Price: {price_row.min_price or 'N/A'} ETB\n"
-                f"* Max Price: {price_row.max_price or 'N/A'} ETB\n"
-                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB\n"
-                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}"
-                f"{variations_info}\n"
-                f"* Source: https://nmis.et/"
-            )
+            if variations_info:
+                price_data_breeds[breed_key] = (
+                    f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace.name}:\n\n"
+                    f"* Breed: {price_row.breed_name or 'N/A'}" +
+                    (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
+                    f"{variations_info}\n"
+                    f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}"
+                    f"* Source: https://nmis.et/"
+                )
+            else:
+                price_data_breeds[breed_key] = (
+                    f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace.name}:\n\n"
+                    f"* Breed: {price_row.breed_name or 'N/A'}" +
+                    (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
+                    f"* Min Price: {price_row.min_price or 'N/A'} ETB\n"
+                    f"* Max Price: {price_row.max_price or 'N/A'} ETB\n"
+                    f"* Avg Price: {price_row.avg_price or 'N/A'} ETB\n"
+                    f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}"
+                    f"{variations_info}\n"
+                    f"* Source: https://nmis.et/"
+                )
 
         return "\n\n".join(price_data_breeds.values())
 
@@ -296,6 +308,8 @@ async def compare_livestock_prices_nearby(
                         parts.append(var["age"])
                     if var.get("grade"):
                         parts.append(f"Grade: {var['grade']}")
+                    if var.get("productionType"):
+                        parts.append(f"Type: {var['productionType']}")
 
                     price_range = ""
                     if var.get("pmin") and var.get("pmax"):
@@ -311,14 +325,22 @@ async def compare_livestock_prices_nearby(
                 if var_details:
                     variations_info = "\n   * Variations:\n" + "\n".join(var_details)
 
-            lines.append(
-                f"{idx}. **{market.name}** ({market.region})\n"
-                f"   * Avg: {market.avg_price} ETB\n"
-                f"   * Range: {market.min_price} - {market.max_price} ETB\n"
-                f"   * As of Date: {market.price_date.strftime('%Y-%m-%d')}"
-                f"{variations_info}\n"
-                f"   * Source: https://nmis.et/"
-            )
+            if variations_info:
+                lines.append(
+                    f"{idx}. **{market.name}** ({market.region})\n"
+                    f"{variations_info}\n"
+                    f"   * As of Date: {market.price_date.strftime('%Y-%m-%d')}"
+                    f"   * Source: https://nmis.et/"
+                )
+            else:
+                lines.append(
+                    f"{idx}. **{market.name}** ({market.region})\n"
+                    f"   * Avg: {market.avg_price} ETB\n"
+                    f"   * Range: {market.min_price} - {market.max_price} ETB\n"
+                    f"   * As of Date: {market.price_date.strftime('%Y-%m-%d')}"
+                    f"{variations_info}\n"
+                    f"   * Source: https://nmis.et/"
+                )
 
         return "\n\n".join(lines)
 
@@ -366,7 +388,7 @@ async def get_livestock_price_quick(
     livestock_normalized = livestock_lower
     plural_to_singular = {
         'oxen': 'ox',
-        'cattle': 'cow',  
+        # 'cattle': 'cow',  <-- Removed to force clarification
         'sheep': 'sheep',  
         'goats': 'goat',
         'camels': 'camel',
@@ -485,6 +507,8 @@ async def get_livestock_price_quick(
                         parts.append(var["age"])
                     if var.get("grade"):
                         parts.append(f"Grade: {var['grade']}")
+                    if var.get("productionType"):
+                        parts.append(f"Type: {var['productionType']}")
                     if var.get("location"):
                         parts.append(f"From: {var['location']}")
 
@@ -502,18 +526,28 @@ async def get_livestock_price_quick(
                 if var_details:
                     variations_info = "\n* Variations:\n" + "\n".join(var_details)
 
-            price_data_breeds[breed_key] = (
-                f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
-                f"* Breed: {price_row.breed_name or 'N/A'}" +
-                (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
-                f"* Min Price: {price_row.min_price or 'N/A'} ETB\n"
-                f"* Max Price: {price_row.max_price or 'N/A'} ETB\n"
-                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB\n"
-                f"* Modal Price: {price_row.modal_price or 'N/A'} ETB\n"
-                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}"
-                f"{variations_info}\n"
-                f"* Source: https://nmis.et/"
-            )
+            if variations_info:
+                price_data_breeds[breed_key] = (
+                    f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
+                    f"* Breed: {price_row.breed_name or 'N/A'}" +
+                    (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
+                    f"{variations_info}\n"
+                    f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                    f"* Source: https://nmis.et/"
+                )
+            else:
+                price_data_breeds[breed_key] = (
+                    f"{price_row.livestock_name} ({price_row.livestock_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
+                    f"* Breed: {price_row.breed_name or 'N/A'}" +
+                    (f" ({price_row.breed_name_amharic})" if price_row.breed_name_amharic else "") + "\n"
+                    f"* Min Price: {price_row.min_price or 'N/A'} ETB\n"
+                    f"* Max Price: {price_row.max_price or 'N/A'} ETB\n"
+                    f"* Avg Price: {price_row.avg_price or 'N/A'} ETB\n"
+                    f"* Modal Price: {price_row.modal_price or 'N/A'} ETB\n"
+                    f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}"
+                    f"{variations_info}\n"
+                    f"* Source: https://nmis.et/"
+                )
         
         logger.info(f"get_livestock_price_quick: found {len(price_data_breeds)} breeds")
         
