@@ -10,7 +10,7 @@ Includes whitelist for agricultural terms to prevent false positives.
 
 import re
 import logging
-from typing import Optional
+from typing import Optional, Tuple, List
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,49 @@ AGRICULTURAL_WHITELIST = [
 ]
 
 
+# ============================================================================
+# PROMPT INJECTION DETECTION
+# ============================================================================
+INJECTION_PATTERNS = [
+    # Direct instruction override
+    r"ignore\s+(all\s+)?(previous|above|prior)\s+(instructions?|prompts?|rules?)",
+    r"disregard\s+(all\s+)?(previous|above|prior)",
+    r"forget\s+(everything|all|what)\s+(you|i)\s+(said|told|wrote)",
+    
+    # Role manipulation
+    r"you\s+are\s+now\s+(?:a|an|the)\s+\w+",
+    r"pretend\s+(to\s+be|you\s+are)",
+    r"act\s+as\s+(if|though|a|an)",
+    r"roleplay\s+as",
+    r"switch\s+(to|into)\s+\w+\s+mode",
+    
+    # System prompt extraction
+    r"(show|tell|reveal|display|print|output)\s+(me\s+)?(your|the)\s+(system|initial|original)\s+(prompt|instructions?|message)",
+    r"what\s+(are|is)\s+your\s+(?:(system|initial|original)\s+)?(instructions?|rules?|prompt)",
+    r"repeat\s+(your|the)\s+(system|initial)\s+(prompt|message)",
+    
+    # Jailbreak attempts
+    r"dan\s+mode",
+    r"developer\s+mode",
+    r"jailbreak",
+    r"bypass\s+(the\s+)?(restrictions?|filters?|rules?)",
+    r"override\s+(the\s+)?(safety|content)\s+(filters?|rules?)",
+    
+    # Delimiter injection
+    r"```system",
+    r"\[system\]",
+    r"<\|im_start\|>",
+    r"<\|endoftext\|>",
+    
+    # Code injection
+    r"eval\s*\(",
+    r"exec\s*\(",
+    r"import\s+os",
+    r"subprocess",
+    r"__import__",
+]
+
+
 class ModerationClassifier:
     """
     Unified moderation classifier for Amharic and English.
@@ -129,6 +172,24 @@ class ModerationClassifier:
                 return True
         
         return False
+
+    def _detect_prompt_injection(self, text: str) -> Tuple[bool, float, List[str]]:
+        """
+        Detect prompt injection attempts.
+        Returns: (is_injection, confidence, matched_patterns)
+        """
+        text_lower = text.lower()
+        matched = []
+        
+        for pattern in INJECTION_PATTERNS:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                matched.append(pattern)
+        
+        if matched:
+            confidence = min(1.0, len(matched) * 0.3)  # More matches = higher confidence
+            return True, confidence, matched
+        
+        return False, 0.0, []
     
     def _load_amharic_model(self):
         """Lazy load Amharic classifier."""
@@ -172,7 +233,19 @@ class ModerationClassifier:
         Returns:
             ModerationResult with is_safe, label, score, reason
         """
-        # First check whitelist - agricultural content should pass through
+        # 1. Check for prompt injection FIRST (Security Priority)
+        # Even if it contains agricultural terms, we don't want to allow system prompts to be leaked
+        is_injection, confidence, matches = self._detect_prompt_injection(text)
+        if is_injection:
+            logger.warning(f"Prompt injection detected: {matches}")
+            return ModerationResult(
+                is_safe=False,
+                label="Injection",
+                score=confidence,
+                reason=f"Prompt injection detected ({len(matches)} patterns matched)"
+            )
+
+        # 2. Check whitelist - agricultural content should pass through
         if self._is_whitelisted(text):
             logger.debug(f"Whitelisted agricultural content: {text[:50]}...")
             return ModerationResult(
@@ -182,7 +255,7 @@ class ModerationClassifier:
                 reason="Agricultural content - whitelisted"
             )
         
-        # Determine language and classify
+        # 3. Determine language and classify
         if lang == "am" or (lang is None and self._is_amharic(text)):
             return self._classify_amharic(text)
         else:
