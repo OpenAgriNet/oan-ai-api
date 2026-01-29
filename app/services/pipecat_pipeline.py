@@ -731,11 +731,23 @@ async def run_pipecat_pipeline(websocket: WebSocket, session_id: str, lang: str 
 
     locked_ws = LockedWebSocket(websocket)
 
+    # Initialize RNNoise Filter
+    rnnoise_filter = None
+    try:
+        from pipecat.audio.filters.rnnoise_filter import RNNoiseFilter
+        rnnoise_filter = RNNoiseFilter()
+        logger.info("✅ RNNoise Filter initialized successfully")
+    except ImportError:
+        logger.warning("⚠️ RNNoise module not found. Noise cancellation disabled.")
+    except Exception as e:
+        logger.error(f"❌ RNNoise initialization failed: {e}")
+
     transport = RawFastAPIWebsocketTransport(
         websocket=locked_ws,
         params=TransportParams(
             audio_out_enabled=True,
             audio_in_enabled=True,
+            audio_in_filter=rnnoise_filter,
             vad_analyzer=vad_analyzer
         )
     )

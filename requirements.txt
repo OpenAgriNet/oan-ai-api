@@ -81,6 +81,6 @@ fastapi
 aiocache
 
 # Pipecat
-pipecat-ai[silero]
+pipecat-ai[silero,rnnoise]
 onnxruntime
 
