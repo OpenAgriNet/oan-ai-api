@@ -6,6 +6,7 @@ import uuid
 import time
 import re
 from helpers.utils import get_logger
+from helpers.amharic_numerals import replace_numbers_with_amharic_words
 import nltk
 try:
     nltk.data.find('tokenizers/punkt')
@@ -448,8 +449,13 @@ class AgriNetLLMService(FrameProcessor):
                             
                             try:
                                 logger.critical(f"🗣️ Pushing TTS Chunk: '{sentence}'")
+                                # Normalize for TTS (Amharic numbers)
+                                tts_text = sentence
+                                if self.context.lang_code == 'am':
+                                    tts_text = replace_numbers_with_amharic_words(sentence)
+                                
                                 # Append \n to FORCE FLUSH the aggregator
-                                await self.push_frame(TextFrame(text=sentence + "\n"))
+                                await self.push_frame(TextFrame(text=tts_text + "\n"))
                             except Exception as e:
                                 logger.warning(f"Frame push failed: {e}")
                         
@@ -460,7 +466,10 @@ class AgriNetLLMService(FrameProcessor):
                     if len(frame_buffer) > 200:
                          try:
                              logger.critical(f"🗣️ Pushing TTS Buffer (Overflow): '{frame_buffer}'")
-                             await self.push_frame(TextFrame(text=frame_buffer + "\n"))
+                             tts_text = frame_buffer
+                             if self.context.lang_code == 'am':
+                                 tts_text = replace_numbers_with_amharic_words(frame_buffer)
+                             await self.push_frame(TextFrame(text=tts_text + "\n"))
                              frame_buffer = ""
                          except Exception as e:
                              pass
@@ -469,7 +478,10 @@ class AgriNetLLMService(FrameProcessor):
             if frame_buffer:
                  try:
                      logger.critical(f"🗣️ Pushing Final TTS Chunk: '{frame_buffer}'")
-                     await self.push_frame(TextFrame(text=frame_buffer))
+                     tts_text = frame_buffer
+                     if self.context.lang_code == 'am':
+                         tts_text = replace_numbers_with_amharic_words(frame_buffer)
+                     await self.push_frame(TextFrame(text=tts_text))
                  except Exception as e:
                      logger.warning(f"Frame push failed: {e}")
             
