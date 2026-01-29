@@ -9,7 +9,7 @@ from pydantic_ai.messages import (
     SystemPromptPart,
     TextPart,
 )
-from pydantic_core import to_jsonable_python
+from pydantic_core import to_jsonable_python, ValidationError
 
 HISTORY_SUFFIX = "_oan"
 
@@ -51,7 +51,11 @@ async def get_message_history(session_id: str) -> List[ModelMessage]:
     """Get or initialize message history."""
     message_history = await cache.get(f"{session_id}_{HISTORY_SUFFIX}")
     if message_history:
-        return ModelMessagesTypeAdapter.validate_python(message_history)
+        try:
+            return ModelMessagesTypeAdapter.validate_python(message_history)
+        except ValidationError:
+            logger.warning(f"⚠️ Invalid message history format for session {session_id}. Resetting history.")
+            return []
     return []
 
 def _get_moderation_history(session_id: str) -> List[ModelMessage]:

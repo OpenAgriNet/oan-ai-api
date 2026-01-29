@@ -301,7 +301,14 @@ class AgriNetLLMService(FrameProcessor):
                      logger.info("🛑 Previous Response Task Cancelled (Interruption)")
                  except Exception: pass
 
+             # Preserve asr_start if it was already set by STT (which sees audio before VAD triggers)
+             asr_start_backup = self.metrics.get('asr_start')
+             
              self.metrics.clear() # Reset metrics for new turn
+             
+             if asr_start_backup:
+                 self.metrics['asr_start'] = asr_start_backup
+                 
              self.metrics['speech_started'] = time.perf_counter()
              logger.critical("🎤 SPEECH DETECTED - PROPAGATING (Verification Mode)")
              await super().process_frame(frame, direction)
@@ -367,7 +374,7 @@ class AgriNetLLMService(FrameProcessor):
             self.context.query = user_text
             self.metrics['query'] = user_text
             
-            # Update history with User Message
+            # Update history with User Message (Transient session history)
             self.history.append({"role": "user", "content": user_text})
             # Keep history manageable
             if len(self.history) > 10:

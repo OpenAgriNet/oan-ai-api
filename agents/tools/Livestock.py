@@ -293,7 +293,7 @@ async def get_livestock_price_quick(
     livestock_lower = livestock_type.lower().strip()
     market_lower = marketplace_name.lower().strip()
     
-    if livestock_lower in vague_terms or len(livestock_lower) < 3:
+    if livestock_lower in vague_terms or len(livestock_lower) < 2:
         return "ERROR: I need to know which specific livestock type you're asking about. Please tell me the livestock type (e.g., cattle, goat, sheep, oxen)."
     
     if market_lower in vague_terms or len(market_lower) < 3:
@@ -327,32 +327,46 @@ async def get_livestock_price_quick(
     # Try exact match first
     marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.get(marketplace_name)
     
-    # If not found, try case-insensitive exact match
+    # If not found, try fuzzy matching with difflib
     if not marketplace_info:
-        for key, value in EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.items():
-            key_lower = key.lower()
-            key_clean = key_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+        import difflib
+        
+        # Create a mapping of clean names to original keys for better matching
+        # key_map maps lowercase clean name -> original key
+        key_map = {}
+        all_keys = []
+        
+        for key in EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.keys():
+            all_keys.append(key)
+            # Add cleaned versions to improve matching chances
+            key_clean = key.lower().replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+            if key_clean not in key_map:
+                key_map[key_clean] = key
+        
+        # 1. Try matching against the full keys
+        matches = difflib.get_close_matches(name_lower, [k.lower() for k in all_keys], n=1, cutoff=0.7)
+        
+        if matches:
+            # Find the original key that matches this lowercase match
+            matched_lower = matches[0]
+            for key in all_keys:
+                if key.lower() == matched_lower:
+                    marketplace_name = key
+                    marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES[key]
+                    logger.info(f"Fuzzy matched '{name_lower}' to '{key}' (score via direct match)")
+                    break
+        
+        # 2. If no match yet, try matching against cleaned names (often better for user inputs)
+        if not marketplace_info:
+            clean_input = name_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+            clean_matches = difflib.get_close_matches(clean_input, list(key_map.keys()), n=1, cutoff=0.6)
             
-            # Exact match (case-insensitive)
-            if key_lower == name_lower or key_clean == clean_name:
-                marketplace_info = value
-                marketplace_name = key  
-                break
-    
-    # If still not found, try partial matching (e.g., "Dubti" matches "Dubti Market")
-    if not marketplace_info:
-        for key, value in EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.items():
-            key_lower = key.lower()
-            key_clean = key_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
-            
-            # Check if the search term is contained in the marketplace name
-            # or if the marketplace name starts with the search term
-            if (clean_name in key_clean or key_clean.startswith(clean_name) or 
-                clean_name.startswith(key_clean)):
-                marketplace_info = value
-                marketplace_name = key 
-                logger.info(f"Fuzzy matched '{marketplace_name}' to '{key}'")
-                break
+            if clean_matches:
+                best_clean_match = clean_matches[0]
+                original_key = key_map[best_clean_match]
+                marketplace_name = original_key
+                marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES[original_key]
+                logger.info(f"Fuzzy matched '{clean_input}' to '{original_key}' (via clean name)")
     
     if not marketplace_info:
         logger.info(f"get_livestock_price_quick: marketplace not found")

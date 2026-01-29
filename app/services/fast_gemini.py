@@ -144,8 +144,14 @@ class FastGeminiService:
                             type=genai.types.Type.OBJECT,
                             required=["crop_name", "marketplace_name"],
                             properties={
-                                "crop_name": genai.types.Schema(type=genai.types.Type.STRING),
-                                "marketplace_name": genai.types.Schema(type=genai.types.Type.STRING),
+                                "crop_name": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Primary name of the crop (e.g., 'Teff', 'Onion'). Do NOT include color/variety (e.g., use 'Teff' not 'White Teff').",
+                                ),
+                                "marketplace_name": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Name of the marketplace (e.g., 'Adama City', 'Bishoftu')",
+                                ),
                             },
                         ),
                     ),
@@ -156,8 +162,14 @@ class FastGeminiService:
                             type=genai.types.Type.OBJECT,
                             required=["livestock_type", "marketplace_name"],
                             properties={
-                                "livestock_type": genai.types.Schema(type=genai.types.Type.STRING),
-                                "marketplace_name": genai.types.Schema(type=genai.types.Type.STRING),
+                                "livestock_type": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Type of livestock (e.g., 'Ox', 'Camel', 'Goat')",
+                                ),
+                                "marketplace_name": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Name of the marketplace (e.g., 'Babile', 'Moyale')",
+                                ),
                             },
                         ),
                     ),
@@ -211,11 +223,32 @@ class FastGeminiService:
                     ),
                     types.FunctionDeclaration(
                         name="get_current_weather",
-                        description="Get current weather for a location",
+                        description="Get the CURRENT weather conditions. Use this for 'right now' or 'current' queries. Accepts location details or coordinates.",
                         parameters=genai.types.Schema(
                             type=genai.types.Type.OBJECT,
-                            required=["latitude", "longitude"],
+                            # Simplify: require EITHER place_name OR lat/lon (enforced by logic, explained in desc)
                             properties={
+                                "place_name": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Name of the city/place (e.g., 'Addis Ababa', 'Adama'). Use this OR latitude/longitude.",
+                                ),
+                                "latitude": genai.types.Schema(type=genai.types.Type.NUMBER),
+                                "longitude": genai.types.Schema(type=genai.types.Type.NUMBER),
+                                "units": genai.types.Schema(type=genai.types.Type.STRING),
+                                "language": genai.types.Schema(type=genai.types.Type.STRING),
+                            },
+                        ),
+                    ),
+                    types.FunctionDeclaration(
+                        name="get_weather_forecast",
+                        description="Get the WEATHER FORECAST (hourly/daily). Use this for 'tomorrow', 'next week', or future queries.",
+                        parameters=genai.types.Schema(
+                            type=genai.types.Type.OBJECT,
+                            properties={
+                                "place_name": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Name of the city/place (e.g., 'Addis Ababa', 'Adama'). Use this OR latitude/longitude.",
+                                ),
                                 "latitude": genai.types.Schema(type=genai.types.Type.NUMBER),
                                 "longitude": genai.types.Schema(type=genai.types.Type.NUMBER),
                                 "units": genai.types.Schema(type=genai.types.Type.STRING),
@@ -413,15 +446,44 @@ class FastGeminiService:
                 result = await list_active_crop_marketplaces()  # No args
             elif tool_name == "list_active_livestock_marketplaces":
                 result = await list_active_livestock_marketplaces()  # No args
-            elif tool_name == "get_current_weather":
-                from agents.tools.weather_tool import CurrentWeatherInput
-                weather_input = CurrentWeatherInput(
-                    latitude=args.get("latitude", 0),
-                    longitude=args.get("longitude", 0),
-                    units=args.get("units", "metric"),
-                    language=args.get("language", "en")
-                )
-                result = await get_current_weather(weather_input)
+            elif tool_name in ["get_current_weather", "get_weather_forecast"]:
+                from agents.tools.weather_tool import CurrentWeatherInput, ForecastInput, get_current_weather, get_weather_forecast
+                
+                lat = args.get("latitude")
+                lon = args.get("longitude")
+                place_name = args.get("place_name")
+                
+                # Internal Geocoding Fallback if Place Name provided but Coords missing
+                if (lat is None or lon is None) and place_name:
+                    from agents.tools.maps import forward_geocode
+                    logger.info(f"📍 Internal Geocoding for weather: {place_name}")
+                    # Run sync geocoding in thread
+                    loc_result = await asyncio.to_thread(forward_geocode, place_name)
+                    if loc_result:
+                        lat = loc_result.latitude
+                        lon = loc_result.longitude
+                    else:
+                        return f"Could not find coordinates for '{place_name}'. Please verify the place name."
+
+                if lat is None or lon is None:
+                    return "Latitude and Longitude are required if place_name is not valid."
+
+                if tool_name == "get_current_weather":
+                    weather_input = CurrentWeatherInput(
+                        latitude=lat,
+                        longitude=lon,
+                        units=args.get("units", "metric"),
+                        language=args.get("language", "en")
+                    )
+                    result = await get_current_weather(weather_input)
+                else: # get_weather_forecast
+                    forecast_input = ForecastInput(
+                        latitude=lat,
+                        longitude=lon,
+                        units=args.get("units", "metric"),
+                        language=args.get("language", "en")
+                    )
+                    result = await get_weather_forecast(forecast_input)
             elif tool_name == "forward_geocode":
                 from agents.tools.maps import forward_geocode
                 # Run sync geocoding in thread to avoid blocking loop

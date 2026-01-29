@@ -117,10 +117,12 @@ async def stream_chat_messages(
     # ⏱️ STAGE 6: History update
     stage_start = time.perf_counter()
     
-    # Manually construct new messages
+    # Manually construct new messages using Pydantic AI models to ensure compatibility
+    from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
+    
     new_messages = [
-        {"role": "user", "content": query},
-        {"role": "model", "content": full_text}
+        ModelRequest(parts=[UserPromptPart(content=query)]),
+        ModelResponse(parts=[TextPart(content=full_text)])
     ]
     
     messages = [
