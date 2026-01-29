@@ -328,45 +328,46 @@ async def get_livestock_price_quick(
     marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.get(marketplace_name)
     
     # If not found, try fuzzy matching with difflib
-    if not marketplace_info:
-        import difflib
+    # NOTE: Commented out for testing LLM auto-correction capabilities
+    # if not marketplace_info:
+    #     import difflib
         
-        # Create a mapping of clean names to original keys for better matching
-        # key_map maps lowercase clean name -> original key
-        key_map = {}
-        all_keys = []
+    #     # Create a mapping of clean names to original keys for better matching
+    #     # key_map maps lowercase clean name -> original key
+    #     key_map = {}
+    #     all_keys = []
         
-        for key in EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.keys():
-            all_keys.append(key)
-            # Add cleaned versions to improve matching chances
-            key_clean = key.lower().replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
-            if key_clean not in key_map:
-                key_map[key_clean] = key
+    #     for key in EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES.keys():
+    #         all_keys.append(key)
+    #         # Add cleaned versions to improve matching chances
+    #         key_clean = key.lower().replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+    #         if key_clean not in key_map:
+    #             key_map[key_clean] = key
         
-        # 1. Try matching against the full keys
-        matches = difflib.get_close_matches(name_lower, [k.lower() for k in all_keys], n=1, cutoff=0.7)
+    #     # 1. Try matching against the full keys
+    #     matches = difflib.get_close_matches(name_lower, [k.lower() for k in all_keys], n=1, cutoff=0.7)
         
-        if matches:
-            # Find the original key that matches this lowercase match
-            matched_lower = matches[0]
-            for key in all_keys:
-                if key.lower() == matched_lower:
-                    marketplace_name = key
-                    marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES[key]
-                    logger.info(f"Fuzzy matched '{name_lower}' to '{key}' (score via direct match)")
-                    break
+    #     if matches:
+    #         # Find the original key that matches this lowercase match
+    #         matched_lower = matches[0]
+    #         for key in all_keys:
+    #             if key.lower() == matched_lower:
+    #                 marketplace_name = key
+    #                 marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES[key]
+    #                 logger.info(f"Fuzzy matched '{name_lower}' to '{key}' (score via direct match)")
+    #                 break
         
-        # 2. If no match yet, try matching against cleaned names (often better for user inputs)
-        if not marketplace_info:
-            clean_input = name_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
-            clean_matches = difflib.get_close_matches(clean_input, list(key_map.keys()), n=1, cutoff=0.6)
+    #     # 2. If no match yet, try matching against cleaned names (often better for user inputs)
+    #     if not marketplace_info:
+    #         clean_input = name_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+    #         clean_matches = difflib.get_close_matches(clean_input, list(key_map.keys()), n=1, cutoff=0.6)
             
-            if clean_matches:
-                best_clean_match = clean_matches[0]
-                original_key = key_map[best_clean_match]
-                marketplace_name = original_key
-                marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES[original_key]
-                logger.info(f"Fuzzy matched '{clean_input}' to '{original_key}' (via clean name)")
+    #         if clean_matches:
+    #             best_clean_match = clean_matches[0]
+    #             original_key = key_map[best_clean_match]
+    #             marketplace_name = original_key
+    #             marketplace_info = EXACT_MATCH_UP_LIVESTOCK_MARKETPLACES[original_key]
+    #             logger.info(f"Fuzzy matched '{clean_input}' to '{original_key}' (via clean name)")
     
     if not marketplace_info:
         logger.info(f"get_livestock_price_quick: marketplace not found")

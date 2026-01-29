@@ -150,14 +150,14 @@ class FastGeminiService:
                                 ),
                                 "marketplace_name": genai.types.Schema(
                                     type=genai.types.Type.STRING,
-                                    description="Name of the marketplace (e.g., 'Adama City', 'Bishoftu')",
+                                    description="Name of the location/marketplace in Ethiopia (e.g., 'Adama', 'Bishoftu'). Correct typos (e.g. 'Ambr'->'Amber').",
                                 ),
                             },
                         ),
                     ),
                     types.FunctionDeclaration(
                         name="get_livestock_price_quick",
-                        description="Get livestock price by marketplace name - FAST VERSION",
+                        description="Get livestock price by location/marketplace name - FAST VERSION",
                         parameters=genai.types.Schema(
                             type=genai.types.Type.OBJECT,
                             required=["livestock_type", "marketplace_name"],
@@ -168,30 +168,36 @@ class FastGeminiService:
                                 ),
                                 "marketplace_name": genai.types.Schema(
                                     type=genai.types.Type.STRING,
-                                    description="Name of the marketplace (e.g., 'Babile', 'Moyale')",
+                                    description="Name of the location/marketplace in Ethiopia (e.g., 'Dubti', 'Moyale'). Correct typos (e.g. 'Gupti'->'Dubti').",
                                 ),
                             },
                         ),
                     ),
                     types.FunctionDeclaration(
                         name="list_crops_in_marketplace",
-                        description="List all available crops in a marketplace",
+                        description="List all available crops in a specific location/marketplace",
                         parameters=genai.types.Schema(
                             type=genai.types.Type.OBJECT,
                             required=["marketplace_name"],
                             properties={
-                                "marketplace_name": genai.types.Schema(type=genai.types.Type.STRING),
+                                "marketplace_name": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Name of the location/marketplace in Ethiopia"
+                                ),
                             },
                         ),
                     ),
                     types.FunctionDeclaration(
                         name="list_livestock_in_marketplace",
-                        description="List all available livestock in a marketplace",
+                        description="List all available livestock in a specific location/marketplace",
                         parameters=genai.types.Schema(
                             type=genai.types.Type.OBJECT,
                             required=["marketplace_name"],
                             properties={
-                                "marketplace_name": genai.types.Schema(type=genai.types.Type.STRING),
+                                "marketplace_name": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Name of the location/marketplace in Ethiopia"
+                                ),
                             },
                         ),
                     ),
