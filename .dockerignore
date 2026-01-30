@@ -1,0 +1,11 @@
+# Ignore the .git directory and its contents
+.git
+
+# Ignore cache and log files
+__pycache__
+*.pyc
+*.log
+
+# Ignore environment files
+env/
+venv/

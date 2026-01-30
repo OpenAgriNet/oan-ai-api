@@ -1,0 +1,424 @@
+{
+  "documents": [
+    {
+      "doc_id": "wheat_manual_000",
+      "type": "document",
+      "name": "Irrigated Wheat Production Manual (2016)",
+      "text": "Irrigated Wheat Production Manual (2016)\nMinistry of Agriculture",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_001",
+      "type": "document",
+      "name": "1. Introduction",
+      "text": "1. Introduction\nIrrigated wheat technology transitioned from research centers to users during the 2004 production season in the Afar Region on a semi-pastoralist farm, yielding 29 quintals per hectare. The variety sown at that time was the second variety released for irrigated lowlands in Ethiopian history, following Pavon-76. Since it was sown on a single hectare, it created a significant opportunity to introduce the technology to the local community. Consequently, because the yield was higher than the national average for rain-fed wheat at the time (24 quintals/hectare), irrigated wheat development was strengthened in Afar, Oromia, Amhara, and other regions. By 2015, coverage reached 1.3 million hectares, with average national productivity hitting 36 quintals per hectare, resulting in a total annual production of 47 million quintals.\nThe land area covered by irrigated wheat is growing rapidly; in the 2016 production season, it exceeded 3 million hectares. The target for national average productivity is set at 4.0 tons per hectare, with total production expected to reach 12 million tons (which equals 120 million quintals).\nTechnical Note on Mathematical Consistency: The source text lists a target of \"120.0 million tons\". However, based on the calculation of 3 million hectares multiplied by 4.0 tons/hectare, the correct national target is 12 million tons (120 million quintals).\nThis will allow the country to exceed self-sufficiency and earn significant foreign exchange by exporting wheat, contributing to the 2063 African Development Goals. Because wheat naturally requires cool air, producing it in hot lowland areas is only possible during relatively cool periods. In the lowlands of Afar, Somali, Oromia, Amhara, South, and Tigray regions, the cool season occurs from October to the end of February. Practical experience from Oromia and Amhara has confirmed that wheat can also be produced under irrigation in mid-altitude temperate (Weyna Dega) and highland areas from October to the end of March.\nSuitable land for irrigated wheat should be level for water distribution, and heavy clay soil (ሸክላማ) capable of retaining water is preferred. This manual incorporates new research results to fill gaps identified over the past three implementation years, serving as a guide for professionals, farmers, semi-pastoralists, and investors.\nNecessity of this manual:\nTo provide stakeholders with knowledge and skills on new technologies.\nTo ensure food security at the household and national levels.\nTo meet domestic factory demand and generate foreign exchange through exports.\nTo create jobs for youth and women.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_003",
+      "type": "document",
+      "name": "2.1. Opportunities",
+      "text": "2.1. Opportunities\nExtensive irrigable land, perennial rivers, groundwater, and a large workforce.\nEcosystems in lowland (Kola), mid-altitude (Weyna Dega), and highlands are suitable.\nIncreasing domestic and global demand for wheat.\nGrowing motivation among farmers, semi-pastoralists, and investors.\nHigh government priority given to the sector.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_004",
+      "type": "document",
+      "name": "2.2. Bottlenecks / Challenges",
+      "text": "2.2. Bottlenecks / Challenges\nUntimely supply of inputs (improved seed, fertilizer, chemicals).\nIncomplete irrigation infrastructure.\nShortage of quality pump delivery hoses and fuel.\nLack of modern mechanization.\nWeak market infrastructure and information systems.\nShortage of varieties suitable for all ecosystems.\nClimate change leading to unseasonal rain.\nSignificant damage from Red-billed Quelea (ቆቅ / ኩሊያ) birds in lowlands.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_005",
+      "type": "document",
+      "name": "2.3. Proposed Solutions",
+      "text": "2.3. Proposed Solutions\nTimely supply of inputs at required volumes.\nCompleting infrastructure in all irrigable areas.\nExpanding electricity for large water pumps.\nSupporting development with modern mechanization.\nStrengthening market and information systems.\nAdvancing research for new varieties and methods.\nOrganizing farmers in clusters for seed multiplication.\nConducting anti-bird chemical spraying before the season begins in lowlands.\nUsing early warning systems and adhering to planting windows.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_007",
+      "type": "document",
+      "name": "3.1. Germination and Emergence",
+      "text": "3.1. Germination and Emergence\nAn ungerminated wheat seed contains an embryo with three to six seminal roots. Larger seeds generally have more seminal roots. The embryo contains the coleoptile, which serves as the origin for the first true leaf. After sowing, irrigation water is applied. Before emerging, the seed consumes 35-40% of its stored food to germinate.\nTemperature Requirements: Minimum soil temperature of 4°C, maximum of 37°C, and an ideal average range of 12-25°C.\nEmergence: Wheat typically germinates within five days of the first irrigation. Uneven land can delay some germination until the second irrigation, pushing harvest back by a week.\nSowing Depth: Ideally 2-4 cm. Sowing deeper than 4 cm results in poor emergence and weak tillering.\nLeaf Formation: New leaves appear every 3 days if day temperatures are 17°C and night temperatures are 12°C. High light and heat accelerate this, while late sowing reduces yield.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_008",
+      "type": "document",
+      "name": "3.2. Root Development",
+      "text": "3.2. Root Development\nThe first node below the soil is the mesocotyl. Above this is the crown node (coleoptile node), where roots begin to sprout once the seedling emerges. Usually, only one node exists below the soil, but deep sowing can cause multiple nodes to form, each with its own roots.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_009",
+      "type": "document",
+      "name": "3.3. Tillering (Muwaled)",
+      "text": "3.3. Tillering (Muwaled)\nSide buds from the base of the plant are the origins of tillers. While 8-10 tillers may form, usually only one or two produce grain; late tillers often fail (abort) due to shading and light competition. To prevent this, use row sowing and lower seed rates to increase productive tillers. Tillering typically occurs 20-30 days after the first mother plant emerges.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_010",
+      "type": "document",
+      "name": "3.4. Stem Elongation",
+      "text": "3.4. Stem Elongation\nElongation starts when the spike begins to form, usually 30-40 days after emergence. This is a critical period where the plant must have sufficient nutrients and moisture. Average height ranges from 30-200 cm depending on the variety and environment.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_011",
+      "type": "document",
+      "name": "3.5. Spike Development",
+      "text": "3.5. Spike Development\nThe plant transitions to the reproductive stage quickly. Photoperiod (daylight length), temperature, and soil fertility determine the number of spikelets. A spikelet can have over 12 florets, but usually only five or fewer produce seed.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_012",
+      "type": "document",
+      "name": "3.6. Grain Development",
+      "text": "3.6. Grain Development\nWheat is a self-pollinated plant. Pollen remains viable for only 15-30 minutes, while the female stigma remains receptive for 4-13 days.\nStages: 1) Seed formation, 2) Milk stage, 3) Soft dough, 4) Hard dough, and 5) Physiological maturity.\nHarvesting: At physiological maturity, grain moisture is 13-14%, and it can be harvested.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_013",
+      "type": "document",
+      "name": "4. Suitable Ecosystems for Irrigated Wheat Development",
+      "text": "4. Suitable Ecosystems for Irrigated Wheat Development",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_014",
+      "type": "document",
+      "name": "4.1. Altitude",
+      "text": "4.1. Altitude\nGlobally, wheat can grow from sea level up to 3,700 meters above sea level. In Ethiopia, irrigated wheat is suitable for two main zones:\nHot Zone (Lowland/Kola): 300 to 1,500 meters above sea level.\nMid-altitude Temperate (Weyna Dega/Highland): 1,500 to 2,300 meters and above.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_015",
+      "type": "document",
+      "name": "4.2. Temperature",
+      "text": "4.2. Temperature\nThe ideal average temperature for wheat is 15–25°C. In hot lowland areas, production is restricted to the relatively cool period from October to February. During the reproductive phase, temperatures above 25°C can reduce grain weight, while temperatures exceeding 35°C can lead to complete yield failure. Heat-tolerant varieties are recommended for areas where temperatures average 20–25°C during the growing season.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_016",
+      "type": "document",
+      "name": "4.3. Soil Types",
+      "text": "4.3. Soil Types\nTexture: In mid-altitude and highland areas, Heavy Clay (ሸክላማ) or Loam soils are ideal. In lowlands, heavy and light alluvial soils are common.\npH Level: The ideal pH range is 5.5–7.5. In the dry lowlands of Afar and Somali, pH levels often reach 7.5–9.0. While wheat can grow in these conditions, a range of 7.5–8.0 is preferred for high yields.\nDrainage: Poorly drained soil leads to root suffocation. In heavy clay areas, using the Broad-bed and Furrow (BBF) system is mandatory to ensure excess water is removed.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_017",
+      "type": "document",
+      "name": "5. Varieties Released for Irrigated Areas",
+      "text": "5. Varieties Released for Irrigated Areas\nSelecting the correct variety is the foundation of high productivity. Varieties used for irrigation must be short to medium in height (to prevent lodging), early maturing (to escape heat), and resistant to diseases like Rust.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_018",
+      "type": "document",
+      "name": "5.1. Bread Wheat Varieties",
+      "text": "5.1. Bread Wheat Varieties\nKingbird-76: Released in 2015; highly adaptable and resistant to rust.\nOgolcho (ኦጎልቾ): High-yielding and suitable for diverse soil types.\nWane (ዋኔ): Preferred for its early maturity, allowing it to escape late-season heat stress.\nKakaba: A standard high-yielding variety with good rust resistance.\nBulala (ቡላላ): Specifically released for the high temperatures of the Awash Basin and Afar lowlands.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_019",
+      "type": "document",
+      "name": "5.2. Salt-Tolerant Varieties",
+      "text": "5.2. Salt-Tolerant Varieties\nIn areas affected by soil salinity, research has identified Simba and Galema as performing significantly better than standard bread wheat varieties.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_020",
+      "type": "document",
+      "name": "6. Irrigation Water Management",
+      "text": "6. Irrigation Water Management\nEfficient water use is essential to prevent soil degradation and maximize yield.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_021",
+      "type": "document",
+      "name": "6.1. Furrow Irrigation (የቦይ መስኖ)",
+      "text": "6.1. Furrow Irrigation (የቦይ መስኖ)\nThis is the most common method in Ethiopia. The land must be precisely leveled to ensure water reaches the end of the furrow without ponding.\nFurrow Spacing: Smallholders should use 40 cm ridges with double rows. Large-scale farms typically use 60–80 cm spacing.\nFurrow Length: Dependent on soil type. In Heavy Clay (ሸክላማ), furrows can be longer (30–50m) as water infiltrates slowly. In Light/Friable soil (ለጋ), shorter furrows (5–20m) prevent water loss at the head of the field.\nSlope: The ideal slope for furrow irrigation is 0.05% to 0.5%.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_022",
+      "type": "document",
+      "name": "6.2. Water Requirements and Scheduling",
+      "text": "6.2. Water Requirements and Scheduling\nWheat requires a total of 350–500 mm of water in mid-altitudes and 450–700 mm in hot lowlands.\nFirst Irrigation: Must occur on the day of sowing to ensure uniform Emergence (ብቅለት).\nCritical Stages: Irrigation is mandatory during Tillering, Booting, and Grain Filling. Stress during Booting is the most damaging as it kills pollen grains.\nFrequency: * Heavy Clay: Every 10–14 days.\nLight/Friable Soil: Every 7–10 days.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_024",
+      "type": "document",
+      "name": "7.1. Land Preparation and Leveling",
+      "text": "7.1. Land Preparation and Leveling\nLand must be plowed 2–3 times and leveled thoroughly. Uneven land leads to \"drought spots\" on high ground and \"drowning spots\" in low areas.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_025",
+      "type": "document",
+      "name": "7.2. Sowing Methods and Seed Rates",
+      "text": "7.2. Sowing Methods and Seed Rates\nRow Sowing: Highly recommended. It uses less seed, allows for easier weeding, and ensures the Urea fertilizer is placed near the roots.\nSowing Depth: 2–4 cm.\nSeed Rates (per Hectare):\nLowland (Hot Zone): 100 kg for row sowing; 150 kg for broadcasting.\nMid-altitude/Highland: 125 kg for row sowing; 150–175 kg for broadcasting.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_026",
+      "type": "document",
+      "name": "7.3. Fertilizer Application",
+      "text": "7.3. Fertilizer Application\nNPSB: Apply 100 kg/ha during sowing.\nUrea: Apply 150 kg/ha total.\nIn Lowlands: Apply 50% (75kg) at the first irrigation/sowing and 50% (75kg) during the Tillering (መከፋፈል) stage.\nIn Highlands: Apply 1/3 at sowing and 2/3 at tillering.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_027",
+      "type": "document",
+      "name": "8. Soil Salinity Management",
+      "text": "8. Soil Salinity Management\nSalinity is a major challenge in the Awash Basin, Afar, and Somali regions. It is identified by white salt crusts on the soil surface.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_028",
+      "type": "document",
+      "name": "8.1. Mitigation Strategies",
+      "text": "8.1. Mitigation Strategies\nLeaching (የአፈር ማጠብ): Applying excess water to wash salts down below the root zone.\nPlanting Technique: Avoid planting on the top of the ridge where salts accumulate. Instead, plant on the side of the ridge.\nChemical Treatment: Application of Gypsum can help displace sodium and improve soil structure.\nBiological Control: Planting salt-tolerant trees like Acacia nilotica around the perimeter of fields can help lower the saline water table.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_029",
+      "type": "document",
+      "name": "9. Crop Rotation (የሰብል ፈራረቃ)",
+      "text": "9. Crop Rotation (የሰብል ፈራረቃ)\nIn irrigated systems, crop rotation is vital for maintaining soil fertility, breaking pest cycles, and maximizing land use efficiency throughout the year.\nLowland Strategy: Wheat should be rotated with Cotton, Soybeans, Mung beans, Onions, or Groundnuts. This allows farmers in the Awash Basin and Afar to achieve up to three harvests per year (Triple Cropping).\nMid-altitude/Highland Strategy: Rotate wheat with pulses (like Chickpeas or Lentils) or oilseeds. This improves soil nitrogen levels and reduces the buildup of wheat-specific soil pathogens.\nBenefits: Rotation prevents the depletion of specific nutrients and controls the spread of weeds like Wild Oats, which are difficult to manage in continuous wheat systems.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_031",
+      "type": "document",
+      "name": "10.1. Weeding",
+      "text": "10.1. Weeding\nWeeds compete for water and nutrients, causing up to 90% yield loss in irrigated lowlands.\nHand Weeding: In hot lowlands, the first weeding must occur 20–30 days after sowing.\nChemical Control: Apply selective herbicides when weeds are at the 2–4 leaf stage. Always ensure the soil is moist before application to increase effectiveness.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_032",
+      "type": "document",
+      "name": "10.2. Disease Management",
+      "text": "10.2. Disease Management\nStem Rust (Yegind Ziget): Characterized by brick-red pustules on the stem. It can destroy an entire crop if left untreated.\nYellow/Stripe Rust (Bicha Ziget): Yellow pustules appearing in linear stripes on the leaves.\nManagement: Use resistant varieties like Kakaba or Kingbird-76. If symptoms appear, apply fungicides such as Tilt, Nativo, or Amistar Xtra.\nFusarium Head Blight (FHB): Causes premature bleaching of the spikes. Management includes crop rotation and using clean, fungicide-treated seed.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_033",
+      "type": "document",
+      "name": "10.3. Insect Pests",
+      "text": "10.3. Insect Pests\nAphids (ለምጽ / ቃር): Sucking insects that appear during warm spells or moisture stress. They cause leaf curling and stunted growth.\nManagement: Treat seeds with Apron Star or Cruiser (350g/100kg) for early-season protection.\nTermites: Common in dry lowlands. Maintaining consistent soil moisture through regular irrigation helps deter termite activity.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_034",
+      "type": "document",
+      "name": "10.4. Red-billed Quelea Birds (ቆቅ / ኩሊያ)",
+      "text": "10.4. Red-billed Quelea Birds (ቆቅ / ኩሊያ)\nQuelea birds are the most destructive avian pests in the lowlands of Afar and Somali. They attack during the Grain Filling (ፍሬ መሙላት) stage.\nTraditional Control: Scaring and nest destruction for small populations.\nNational Coordination: For populations exceeding 250,000, the Ministry of Agriculture coordinates aerial or ground-based spraying using Batayon 640% ULV.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_036",
+      "type": "document",
+      "name": "11.1. Harvesting",
+      "text": "11.1. Harvesting\nTiming is critical to prevent Shattering (ፍሬ መርገፍ) and quality loss.\nIndicators: Harvest when the green color completely disappears from the plant and the grain is hard.\nMoisture Content: Ideally 12–13%.\nMechanization: The use of Combine Harvesters is highly recommended to speed up the process and minimize field losses.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_037",
+      "type": "document",
+      "name": "11.2. Storage",
+      "text": "11.2. Storage\nProper storage protects the harvest from the Greater Grain Weevil (የጥራጥሬ ነቀዝ) and mold.\nHermetic Storage: Use PICS (Hermetic) bags or Metal Silos. These exclude oxygen, killing insects without the need for chemical fumigants.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_038",
+      "type": "document",
+      "name": "11.3. Straw Collection",
+      "text": "11.3. Straw Collection\nWheat straw is a valuable byproduct for livestock feed, especially during droughts in the lowlands. Use a Baler to collect and compress the straw for easy transport and storage.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "wheat_manual_039",
+      "type": "document",
+      "name": "12. Implementation Strategy",
+      "text": "12. Implementation Strategy\nTo achieve the 2016 target of 12 million tons (120 million quintals), the following strategies will be employed:\nCluster-Based Approach: Organizing farmers into large clusters to facilitate the delivery of inputs, mechanization services, and technical support.\nCapacity Building: Continuous training for professionals at the Region, Woreda, and Kebele levels.\nSeed Multiplication: Strengthening local seed systems to ensure every Kebele has access to improved varieties like Bulala and Kingbird-76.\nMonitoring & Evaluation: Real-time data collection on planting dates, input use, and pest outbreaks to ensure targets are met across Afar, Oromia, Amhara, Tigray, and Somali.",
+      "source": "Irrigated Wheat Production Manual 2016 - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_001",
+      "type": "document",
+      "name": " Pre-seeding: field preparation.",
+      "text": "The Field preparation varies depending on the local conditions (humidity, soil type, presence of crop residues, etc.); it should be prepared in a way that is conducive to seed germination and growth. Before sowing, the soil should be converted into small particles in the last tillage operation. There should be no large lumps or the soil should be converted into powder. The field should be leveled and water-resistant as much as possible. If the land is sloping before sowing (2 - 5%), the risk of flooding should be controlled by digging a ditch opposite the slope. If the field is a land that has been plowed, it is sufficient and profitable to plow only 3 to 4 times on average, depending on the type of soil. However, if the land is virgin and drained, up to 5 times of plowing may be required.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_002",
+      "type": "document",
+      "name": "Pre-seeding: crop species, crop varieties.",
+      "text": "If your maize field receives low rainfall and is lowland, plant early maturing varieties that mature in 90 to 110 days. These are Melkassa1,2,3,4,5,6QU, MH130, MH138QU, MH140, and MH141. If your area is hilly and receives sufficient rainfall, plant medium maturing varieties that mature in 140-155 days, such as BH546, BH547, BHQWY545, Nada (BH520 W1), Shankura (BH5212); Blain (BH5211); Sow Meta (BH5211), BHQP548, Ilu (BH549). If your land is in a moderate to highland area (1600 to 2200 m above sea level) with sufficient rainfall, sow BH661, which matures in 160 days. If your land is in a highland area and receives sufficient rainfall, sow late maturing varieties, AMH852Q; AMH853; Ambo (AMH854); Wench, Jibat. Depending on the rainfall, suitable maize varieties with better protein and provitamin A content, such as Melkassa6Q, MH138Q, BHQPW545; BHQPW545; BHQPW548; Blaen (BHA5211); AMH852Q; can be used as an alternative.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_003",
+      "type": "document",
+      "name": "seed size, seed per hectare, seed spread",
+      "text": "Depending on the variety and seed size, an average of 25-30 kilograms of corn seed is sufficient for one hectare.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_004",
+      "type": "document",
+      "name": "pre-seeding: soil depth.",
+      "text": "The depth of sowing of maize varies from 5 cm to 12 cm depending on the soil type. In heavy clay soil, it is sown at a depth of 5 to 7 cm, in light clay and heavy silt soil at a depth of 9 cm, in light silt soil at a depth of 10 cm, and in sandy soil at a depth of 12 cm.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_007",
+      "type": "document",
+      "name": "fertilizer use, fertilizer per hectare, fertilizer quantity",
+      "text": "Two types of fertilizers are widely used in Ethiopia to increase maize production and productivity, artificial and natural. Urea and NPS are artificial fertilizers that contain few nutrients required by maize and should be added only in the amount that is sufficient for the crop. The recommended soil fertilizer application of urea and NPS is based on the local conditions and soil fertility. According to research data, 150-200 kg NPS per hectare for both soil types (black and red) and 200-250 kg urea for medium altitude and areas with sufficient rainfall can increase maize production and productivity. For low rainfall areas, 100 kg NPS per hectare and 150 kg urea per hectare can increase maize production and productivity. However, recently revised fertilizer application guidelines have been issued for specific areas; for areas with moderate altitude and sufficient rainfall in Oromia and Southern Nations, Nationalities and Peoples’ Regions (wet Weynadega and Kola); 250 kg urea and 150 kg NPS per hectare are recommended. Similarly, for areas with moderate altitude and sufficient rainfall in Amhara National Region (wet Weynadega and Kola), 300 kg urea and 200 kg NPS per hectare are recommended. In Ethiopia, for areas with low rainfall, 150 kg urea and 100 kg NPS per hectare are recommended. If natural fertilizer is prepared from compost, bio-slurry compost or animal manure; It is recommended to spray the field 3-4 weeks before sowing to ensure that the nutrients it contains are well digested and ready to be given to the corn. If the natural fertilizer is prepared from vermicompost, it is recommended to add it 1-2 weeks before sowing as the nutrients are ready relatively quickly. While the recommendations regarding the use of natural fertilizers vary from place to place, for one hectare of land; compost 80-120 quintals, bioslurry compost 40-60 quintals, grass manure 100-150 quintals and vermicompost 20-30 quintals increase the productivity of corn. Using natural fertilizers in combination with artificial fertilizers improves the productivity of corn. For a comprehensive list of recommendations for artificial and natural fertilizers, depending on the local environment and soil type, see the 2016 Corn Guidelines.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_008",
+      "type": "document",
+      "name": "plant protection: pest control",
+      "text": "The main insect pests that attack maize after germination are the new arrivals, the cane borer, and the termite. Therefore, to prevent your crop from being damaged by these pests, it is necessary to implement an integrated pest management strategy by regularly inspecting and inspecting the field, such as deep plowing, maintaining field hygiene, maintaining soil health, sowing crops in rows, using push-pull technology, nurturing natural control enemies, manually picking and killing the larvae and eggs, using resistant varieties such as SBRH-1, and finally using pesticides. Some of the types of pesticides that are effective against new arrivals and cane borers are BELT 480 SC, Coragen 200 SC, UPHOLD 360 SC, MAXX 247 SC, Karate 5EC, Dizinol 60% EC, Dizinol 10% GR, Cloropaytofos 48% EC, Maltion 50% EC, Lume 500 (biopestcide). Other registered pesticides are used for regular pest control: Dizinol 60% EC, Malition 50% EC, Diametote 40% EC, Cloropaytofos 48% EC, Carbaryl 85% WP. Cane weed killer: Dizinol 60% EC, Malathion 50% EC, Carbaryl 85% WP, Dizinol 10% GR, Cloropaytofos 48% EC, Karate 5% EC. Use other registered pesticides: Cloropaytofos 48% EC. Use the pesticide and water according to the label and consult your local agricultural expert regularly.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_009",
+      "type": "document",
+      "name": "plant protection: disease control",
+      "text": "The main maize leaf diseases known in Ethiopia are gray leaf spot, phosphorous maize leaf spot, turcicum maize leaf spot and common maize leaf blight; most of the improved maize varieties in our country are resistant to these diseases. Therefore, the use of resistant varieties is the first option to prevent the disease. Since there are no varieties resistant to corn killer virus in Ethiopia, maintaining the cleanliness of the field and the field environment, using clean seeds that are certified free from the disease, keeping the corn field and the field area free of weeds as weeds growing in and around the field can be a refuge for pests that transmit the disease, building the resistance of the crops by adding manure, compost and fertilizers, crop rotation and using an integrated disease management system can prevent the disease in advance. Since corn infected with corn killer virus cannot be cured, uprooting, burning, or burying infected corn can help prevent the spread of the disease. The only options for controlling corn head blight are the use of chemically treated seeds and integrated disease management methods.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_010",
+      "type": "document",
+      "name": "plant protection: control weeds, herbicide for weeds, corn intercropping with legumes, herbicide per hectare",
+      "text": "Maize is not resistant to weeds at the seedling stage. Hand weeding is preferred and the first weeding should be done 18 to 25 days after emergence or when the crop reaches the 3-leaf stage. The second weeding should be done 35 to 40 days before the second round of urea application, depending on the local conditions, and the third weeding should be done 50 to 55 days after planting. Weeds can be controlled by traditional methods; dry plowing during field preparation; sowing at the appropriate depth in rows and intercropping maize with legumes. If herbicides are necessary, apply pre-emergence herbicides such as Primagram Gold 660 SC, Surestart SE and Integrity within three days of sowing while the soil is still moist. For one hectare, you should spray 3 liters of Primagram Gold 660 SC diluted in 200 liters of water. Similarly, for post-emergence weed control, it is recommended to use “2,4-D 720 g/l AE and Auxo EC 337”. However, before using any herbicide, you should read the instructions carefully or consult your local agricultural expert to gain sufficient knowledge about the chemical. Good field preparation, sowing clean seeds, hand harrowing and harrowing, and pre-emergence and post-emergence herbicide spraying on a well-prepared maize field are other examples of integrated weed control methods.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_011",
+      "type": "document",
+      "name": "applying Fertilizer",
+      "text": "Recommendations and recommendations for corn fertilizer application are based on many factors and vary from place to place. The farmer should consult the agricultural extension officer in the kebele or woreda to understand the type and amount of fertilizer needed for the local soil type. This section provides suggestions on how to apply fertilizer to increase yield. Corn does not require high levels of nutrients while it is still in the seedling stage; this is because the total plant size is very small at this stage of growth. In general, the need for major nutrients, such as urea fertilizer, NPS fertilizer and other nutrients, is not determined by the number of rows of corn heads within 20-25 days of sowing, so it is preferable to spray the first round within these days, and the second round after 40-45 days. The need for these types of fertilizers will be highest at 50 days after sowing. Since the need for fertilization decreases after 60 days of sowing, it is preferable to add a third round at 50-60 days. During these days (20-60 days), the farmer should ensure that the crop seedlings are not affected by nutrient deficiency to achieve maximum yield.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_012",
+      "type": "document",
+      "name": "crop harvest, crop collection, product harvest, crop storage, corn shell, corn sheller, corn threshing",
+      "text": "Corn is harvested when it is ripe, that is, when the average moisture content of the kernel is 13-18%. The maturity of the kernel is known when a black layer appears on the surface of the kernel, which is attached to the cob. At this moisture level, each cob should be placed in a drying area or, if a corn sheller and thresher is used, when the moisture content reaches 13-14%, it should be shelled, dried and stored in a warehouse.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_013",
+      "type": "document",
+      "name": "product threshing and preparation, corn shucking, corn shucking",
+      "text": " Before you shuck the unshelled corn crop, you should dry it in a clean drying area or on a canvas until the moisture content reaches 13-14% or until it feels soft when broken with a toothpick. In addition to saving time and labor, it is preferable to purchase or rent a pedal or motor-operated or other improved multi-purpose debarking machine that can debark some or many heads, as long as it helps to ensure a quality product.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "maize_014",
+      "type": "document",
+      "name": "post harvest care, post harvest collection and storage",
+      "text": "After the corn is harvested, when the moisture content reaches 12-13%, it should be stored in a sealed container or barn, free from rain and moisture, as well as from rodents and other pests. To maintain the quality of the product for processing or marketing, the storage should be a plastic bag or a moisture-proof storage. If the corn product is to be stored for more than a month, it can be treated with an anti-mosquito drug called Actellic or Etiolation, or if this is not available, it can be stored mixed with a teff or dagusa product. If the above methods cannot be used to prevent pests in the barn and when pests begin to appear, it is necessary to spray the barn with an approved pest control product at regular intervals.",
+      "source": "Maize Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_001",
+      "type": "document",
+      "name": " Pre-seeding: field preparation.",
+      "text": "Prepare your teff field so that it has sufficient fertility and moisture. Sowing teff seeds early in the season will increase crop yields. The first ploughing, i.e. the first ploughing, should be done 20 to 30 cm deep, without losing the moisture, as soon as the harvest is done. If your teff field is soft, plough it 2 to 3 times; if it is loose, plough it 3 to 5 times. If it is ploughed with a tractor, ploughing twice and ploughing the third time with a bull is sufficient. To ensure better soil fertility, plough the second ploughing 3 to 4 weeks after the first ploughing and the third ploughing 3 weeks after the second ploughing. Use compost to reduce soil erosion and increase the soil’s fertility and moisture holding capacity. The soil for teff should be loamy, like sand, that is compacted when you press it and crumbles when you harrow it. In some types of soils that have a tendency to swell, compaction will help to improve teff emergence, prevent the soil from losing moisture too quickly, dry out weeds, and reduce their spread. To ensure good soil-fertilizer integration, sow teff on top of the final tillage for seeding by compacting the fertilizer after sowing.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_002",
+      "type": "document",
+      "name": "Pre-seeding: crop species, crop varieties.",
+      "text": "For areas requiring medium and long-term maturity, sow teff varieties such as Bishoftu, Eba, Bereket, Kule, Jitu, Jarso, Washera, Aksumite, Bradama, Kuncho; Etsub; Kora; Ede or similar. For lowland areas where rainfall is short and teff arrives quickly, use Boset, Boni; Bora, Mana, Sunan; Madhara; Gerado or Simada. For highland areas where water is scarce, use Gembchu and Dega teff. For irrigation, use a variety called Bekur.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_003",
+      "type": "document",
+      "name": "seed size, seed per hectare, seed spread",
+      "text": "Use 10 to 15 kilograms of improved teff seed per hectare of teff field.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_004",
+      "type": "document",
+      "name": "pre-seeding: soil depth.",
+      "text": "Use the row-sowing method to easily sow teff seeds in rows. When sowing teff in rows, leave 20 cm between the rows. When the land is prepared for sowing, sprinkle the NPS fertilizer in the middle of the furrow and cover it gently when the furrow is turned. Sprinkle the prepared seeds in the remaining small furrow with a solution-based line seeder or a seeder made from a Highland water tank and leave it uncovered. Every time it rains, the soil that has accumulated on the top moves down, covering the teff seedlings with soil.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_005",
+      "type": "document",
+      "name": "seedlings, spread of seedlings, transplant seedlings",
+      "text": "If your teff field is waterlogged and dries out quickly, planting teff seedlings will make you more productive than sowing seeds; it will also protect you from weed infestation. To prepare seedlings, soak half a kilogram of teff seeds in a sieve and it is enough for one hectare of field. If your area is in the highlands, transplant the seedlings to the main field after 25 to 28 days. If your field is in the lowlands, transplant them to the main field after 18-20 days, when the seedlings have 3-4 leaves. When transplanting the seedlings, plant 3 seedlings in one hole, leaving 20 cm between rows and 10 cm between seedlings.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_007",
+      "type": "document",
+      "name": "fertilizer use, fertilizer per hectare, fertilizer quantity",
+      "text": "About artificial fertilizers.For black soil types, apply 100 to 150 kg or two to three bags of NPS fertilizer per hectare immediately after sowing. Apply this fertilizer to a depth of 3-5 cm in the seedbed. For heavy clay soil, apply 100 to 150 kg or two to three bags of white urea fertilizer per hectare. For light soil types, such as red or brown, apply 50 to 100 kg or one to two bags per hectare. That is, apply one half of the fertilizer under the row and cover it with soil 15-18 days after sowing. Apply the remaining half of the fertilizer 35-40 days after sowing and cover it with soil. For acidic soil types, consult your local agricultural experts to find out the correct fertilizer application time. In a field previously covered with legumes, the amount of urea fertilizer required can be reduced by half (100 kg/ha of NPS and 50 kg/ha of urea is sufficient). This can be done if the legumes are properly cultivated in the field and if they are harvested instead of uprooted at harvest time and the crop is left in the field. Use only two-thirds of the recommended amount of nitrogen fertilizer on the field where the previous year's crop was planted. Apply natural fertilizers 3-4 weeks before sowing. If using natural fertilizers alone, use 20-30 quintals per hectare. Use natural fertilizers (15-20 quintals per hectare) in combination with synthetic fertilizers (50-75 kg/ha).\n\nIn areas with acidity problems, use 20-30 quintals per hectare depending on the soil type and recommendations.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_008",
+      "type": "document",
+      "name": "plant protection: pest control",
+      "text": "The main insect pests of teff include teff fly, red teff moth, grasshoppers, etc. To reduce the incidence and damage of these pests, plow the field early to expose it to the sun, harrow deeply, sow in rotation, and harrow immediately after harvest. Remove any unwanted plants and weeds in the area; use registered and up-to-date pesticides. For teff fly, if necessary, use pesticides (Furadan 39% EC seed paste 0.9 kg/ha; Carbofuran 75% powder 1 kg/ha with water). For red teff worm, if necessary, use and spray carbaryl 85% WP 1.5 kg/ha. Use the pesticide and water dosage as per the label and consult your local agricultural expert for more information.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_009",
+      "type": "document",
+      "name": "plant protection: disease control",
+      "text": "To protect teff seedlings from diseases, use resistant varieties, crop rotation and use anti-disease chemicals in consultation with agricultural experts. The main diseases of teff are leaf spot, black spot and black rot. To prevent black spot and black rot diseases, use disease-resistant varieties and clean seeds. If leaf spot and black rot diseases occur, they can spread rapidly and widely and can destroy your teff crop, so conduct a field survey to prevent them. If symptoms of black spot and black rot diseases are confirmed on your teff and the level of the disease is dangerous, spray Nativo 300 SC, Rex Dr. Fuzaro 400 SC, Natura 250 EW, Tilt 250 EC and other anti-disease drugs in consultation with your local agricultural expert immediately. Considering the sowing season of teff, spray the pesticide 1-2 times every two weeks (15 or 21 days) when the teff reaches the flowering stage. When using pesticides, follow the dosage and other necessary information written on the packaging. Use chemical protective equipment properly when spraying pesticides. Consult your local agricultural experts for more information.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_010",
+      "type": "document",
+      "name": "control weeds, herbicide for weeds",
+      "text": "To prevent the spread of weeds, follow crop rotation, use clean and weed-free teff seeds and clean farming equipment. During harvesting, separate weeds from the crop, and harvest in a clean threshing area. The first weeding should be done by hand 15-18 days after the teff sprouts. The second weeding should be done 25-30 days after the sprouts sprout before applying white urea fertilizer. Use herbicides to control weeds only if all other options are exhausted. If you are using a selective herbicide, spray it 25-30 days after sowing. Spray Pallas OD 45 at 0.4 liters or a quarter of a liter diluted in clean water. This herbicide will also control broadleaf and grass weeds. Ask your local agricultural expert for advice on its use.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_011",
+      "type": "document",
+      "name": "applying Fertilizer",
+      "text": "Adding the entire amount of lime required three weeks to a month in advance has been found to be a better practice to minimize labor and time constraints.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_012",
+      "type": "document",
+      "name": "crop harvest, crop collection, product harvest, crop storage",
+      "text": "Harvest the teff when the pods or stalks turn yellow or pale, before they become too dry and the teff grains break with a toothpick. Depending on the local conditions, sow it on a dry field for an average of three days until the grain dries. If it is a field grown by spreading seedlings, mow it with a motorized mower to prevent the fruit from being lost. After it is harvested and dried, collect it properly and make a raised bed above the ground to prevent it from being damaged by rain and floodwater until it is harvested.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_013",
+      "type": "document",
+      "name": "product threshing and preparation",
+      "text": "Threshing the teff crop with a threshing machine is the preferred method. However, if this is not possible, it can be threshed with an ox on a properly and hygienically prepared threshing floor. This will prevent unwanted wastage and loss of quality of the teff crop.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    },
+    {
+      "doc_id": "tef_014",
+      "type": "document",
+      "name": "post harvest care, post harvest collection and storage",
+      "text": "When storing teff in a clean, airtight container or warehouse, the moisture content of the product should not exceed 13%. To maintain the quality of the product, store it in a place free from dirt and foreign matter, away from moisture. Store the product separately according to its quality, color, production date, etc.",
+      "source": "Tef Production Guide - Ministry of Agriculture"
+    }
+  ]
+}

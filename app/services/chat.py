@@ -3,7 +3,7 @@ import json
 import time
 import os
 from agents.agrinet import agrinet_agent
-from agents.moderation import moderation_agent
+from app.services.moderation_classifier import moderation_classifier
 from helpers.utils import get_logger
 from app.utils import (
     update_message_history,
@@ -16,7 +16,6 @@ from agents.deps import FarmerContext
 from helpers.utils import get_logger, get_prompt, get_today_date_str
 from pydantic_ai import UsageLimits
 from app.services.fast_gemini import FastGeminiService, FastModerationService
-
 load_dotenv()
 
 logger = get_logger(__name__)
@@ -53,9 +52,7 @@ async def stream_chat_messages(
     stage_time = (time.perf_counter() - stage_start) * 1000
     logger.info(f"⏱️ [TIMING] Context preparation: {stage_time:.2f}ms")
     
-    # ⏱️ STAGE 2: Moderation (OPTIONAL - can be disabled for speed)
-    # NOTE: Old backend doesn't have moderation - this adds 3-4 seconds overhead
-    # Set ENABLE_MODERATION=false in .env to disable
+    # ⏱️ STAGE 2: Pre-Moderation (User Input)
     enable_moderation = os.getenv("ENABLE_MODERATION", "false").lower() == "true"
     moderation_time = 0
     if enable_moderation:
@@ -72,7 +69,7 @@ async def stream_chat_messages(
         
         deps.update_moderation_str(str(moderation_data))
     else:
-        logger.info(f"⏱️ [TIMING] Moderation agent: DISABLED (0ms)")
+        logger.info(f"⏱️ [TIMING] Pre-moderation: DISABLED (0ms)")
 
     # ⏱️ STAGE 3: History trimming
     stage_start = time.perf_counter()
@@ -132,21 +129,18 @@ async def stream_chat_messages(
     await update_message_history(session_id, messages)
     stage_time = (time.perf_counter() - stage_start) * 1000
     logger.info(f"⏱️ [TIMING] History update: {stage_time:.2f}ms")
-
     # ⏱️ TOTAL PIPELINE TIME
     total_time = (time.perf_counter() - pipeline_start) * 1000
     logger.info(f"⏱️ [TIMING] ═══ TOTAL PIPELINE: {total_time:.2f}ms ═══")
-
-    # Return complete response as JSON (not mixed format)
+    
+    # Return complete response as JSON
     response_data = {
         "response": full_text,
         "status": "success"
     }
     
-    # Add sources if available
     if sources:
         response_data["sources"] = sources
-
     # 📊 GENERATE ASCII PERFORMANCE TABLE
     try:
         if 'timings' in metrics:

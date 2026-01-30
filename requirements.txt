@@ -25,7 +25,7 @@ openai
 pydantic==2.12.5
 tiktoken
 tenacity
-
+transformers
 # Logfire
 logfire
 
@@ -48,7 +48,7 @@ openpyxl
 jinja2
 
 # Pydantic AI 
-pydantic-ai==1.38.0
+pydantic-ai==1.42.0
 google-genai==1.57.0
 asgiref
 
@@ -84,3 +84,14 @@ aiocache
 pipecat-ai[silero,rnnoise]
 onnxruntime
 
+# data conversion
+convertdate
+
+# Cosdata Vector Database Client
+cosdata-client>=0.2.2
+
+# Sentence Transformers for local embeddings (Cosdata RAG)
+sentence-transformers>=2.2.0
+
+# Language data for langcodes
+language-data>=1.4.0

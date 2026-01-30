@@ -7,7 +7,6 @@ from app.utils import get_message_history
 from app.tasks.suggestions import create_suggestions
 from app.services.chat import stream_chat_messages
 from app.models.requests import ChatRequest
-from typing import Optional
 
 logger = get_logger(__name__)
 
@@ -28,7 +27,7 @@ async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
     logger.debug(f"Retrieved message history for session {session_id} - length: {len(history)}")
 
     # Create suggestions for the session: 1, 3, 5, 7, ...
-    if (len(history)+1) % 2 == 0:
+    if (len(history)+1) % 2 == 1:
         logger.debug(f"Creating suggestions for session {session_id}")
         background_tasks.add_task(create_suggestions, session_id, request.target_lang)
 

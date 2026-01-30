@@ -10,6 +10,7 @@ import boto3
 from dotenv import load_dotenv
 import base64
 import numpy as np
+import pytz
 import tiktoken
 import unicodedata as ud
 from datetime import datetime
@@ -168,6 +169,143 @@ def get_today_date_str(lang: str = 'en') -> str:
             return today.strftime('%A, %d %B %Y')
             
     return today.strftime('%A, %d %B %Y')
+
+
+def _start_day_of_ethiopian(year):
+    """ returns first day of that Ethiopian year
+
+    Params:
+    * year: an int """
+
+    # magic formula gives start of year
+    new_year_day = (year // 100) - (year // 400) - 4
+
+    # if the prev ethiopian year is a leap year, new-year occrus on 12th
+    if (year - 1) % 4 == 3:
+        new_year_day += 1
+
+    return new_year_day
+
+def to_ethiopian(year, month, date):
+        """ Ethiopian date string representation of provided Gregorian date
+
+        Params:
+        * year: an int
+        * month: an int
+        * date: an int """
+
+        # prevent incorect input
+        inputs = (year, month, date)
+        if 0 in inputs or [data.__class__ for data in inputs].count(int) != 3:
+            raise ValueError("Malformed input can't be converted.")
+
+        # date between 5 and 14 of May 1582 are invalid
+        if month == 10 and date >= 5 and date <= 14 and year == 1582:
+            raise ValueError("Invalid Date between 5-14 May 1582.")
+
+        # Number of days in gregorian months
+        # starting with January (index 1)
+        # Index 0 is reserved for leap years switches.
+        gregorian_months = [0, 31, 28, 31, 30, 31, 30, \
+                            31, 31, 30, 31, 30, 31]
+
+        # Number of days in ethiopian months
+        # starting with January (index 1)
+        # Index 0 is reserved for leap years switches.
+        ethiopian_months = [0, 30, 30, 30, 30, 30, 30, 30, \
+                            30, 30, 5, 30, 30, 30, 30]
+
+        # if gregorian leap year, February has 29 days.
+        if  (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:
+            gregorian_months[2] = 29
+
+        # September sees 8y difference
+        ethiopian_year = year - 8
+
+        # if ethiopian leap year pagumain has 6 days
+        if ethiopian_year % 4 == 3:
+            ethiopian_months[10] = 6
+        else:
+            ethiopian_months[10] = 5
+
+        # Ethiopian new year in Gregorian calendar
+        new_year_day = _start_day_of_ethiopian(year - 8)
+
+        # calculate number of days up to that date
+        until = 0
+        for i in range(1, month):
+            until += gregorian_months[i]
+        until += date
+
+        # update tahissas (december) to match january 1st
+        if ethiopian_year % 4 == 0:
+            tahissas = 26
+        else:
+            tahissas = 25
+
+        # take into account the 1582 change
+        if year < 1582:
+            ethiopian_months[1] = 0
+            ethiopian_months[2] = tahissas
+        elif until <= 277 and year == 1582:
+            ethiopian_months[1] = 0
+            ethiopian_months[2] = tahissas
+        else:
+            tahissas = new_year_day - 3
+            ethiopian_months[1] = tahissas
+
+        # calculate month and date incremently
+        m = 0
+        for m in range(1, ethiopian_months.__len__()):
+            if until <= ethiopian_months[m]:
+                if m == 1 or ethiopian_months[m] == 0:
+                    ethiopian_date = until + (30 - tahissas)
+                else:
+                    ethiopian_date = until
+                break
+            else:
+                until -= ethiopian_months[m]
+
+        # if m > 4, we're already on next Ethiopian year
+        if m > 10:
+            ethiopian_year += 1
+
+        # Ethiopian months ordered according to Gregorian
+        order = [0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 1, 2, 3, 4]
+        ethiopian_month = order[m]
+
+        return (ethiopian_year, ethiopian_month, ethiopian_date)
+
+
+def get_ethiopian_date_str() -> str:
+    """Get today's date in Ethiopian calendar format with Amharic month names.
+
+    Uses the local to_ethiopian function for conversion.
+
+    Returns:
+        str: Date in format "ጥር 19, 2018"
+    """
+    # Amharic month names
+    ethiopian_months = [
+        "መስከረም",  # 1 - Meskerem
+        "ጥቅምት",   # 2 - Tikimt
+        "ኅዳር",    # 3 - Hidar
+        "ታኅሣሥ",   # 4 - Tahsas
+        "ጥር",     # 5 - Tir
+        "የካቲት",   # 6 - Yekatit
+        "መጋቢት",   # 7 - Megabit
+        "ሚያዝያ",   # 8 - Miyazya
+        "ግንቦት",   # 9 - Ginbot
+        "ሰኔ",     # 10 - Sene
+        "ሐምሌ",    # 11 - Hamle
+        "ነሐሴ",    # 12 - Nehase
+        "ጳጉሜ",    # 13 - Pagume
+    ]
+
+    today = datetime.now(pytz.timezone("Africa/Addis_Ababa"))
+    eth_year, eth_month, eth_day = to_ethiopian(today.year, today.month, today.day)
+
+    return f" {ethiopian_months[eth_month - 1]} {eth_day}/{eth_year}"
 
 
 def get_logger(name) -> logging.Logger:

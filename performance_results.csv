@@ -1,0 +1,9 @@
+mode,input,query,stt_duration,stt_transcription,buffer_wait,llm_ttfb,llm_inference_total,llm_total_time,tool_calls,tool_processing,moderation,tts_synthesis,e2e_latency,total_e2e_latency,first_audio_latency,text_streaming,response_generation,full_pipeline_time,stt_latency
+Text - En,What is the weather in Mumbai?,,,N/A,,,,3612.87,2,139.81,1003.34,N/A,,5004.85,,,,,
+Text - En,How to grow tomatoes?,,,N/A,,,,1663.87,0,0,1201.62,N/A,,3035.4,,,,,
+Text - En,Market price of onion in Nashik?,,,N/A,,,,4146.21,2,160.74,1357.08,N/A,,5880.48,,,,,
+Text - Am,What is the weather in Mumbai?,,,N/A,,,,2722.9,1,93.32,1298.2,N/A,,4204.1,,,,,
+Text - Am,How to grow tomatoes?,,,N/A,,,,1399.06,0,0,1207.12,N/A,,2685.74,,,,,
+Text - Am,Market price of onion in Nashik?,,,N/A,,,,3326.59,2,46.79,1321.39,N/A,,4879.46,,,,,
+Voice - En,Query4.m4a,What is the price of goat in Eseta a far?,2755.39,,3001.16,3175.21,3235.34,,2,20.18,1019.87,2306.28,9686.19,,,,925.97,10195.82,2643.24
+Voice - En,Query2.m4a,How to grow tomatoes?,1177.4,,3001.17,960.61,969.99,,0,0,1007.27,780.53,5923.46,,,,960.61,6331.1,718.78

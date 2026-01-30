@@ -1,0 +1,61 @@
+INFO:     127.0.0.1:47892 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59406 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:45430 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52402 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50642 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60616 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40380 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59890 - "GET /health HTTP/1.1" 404 Not Found
+2026-01-22 18:04:53,105 WARN received SIGTERM indicating exit request
+2026-01-22 18:04:53,105 WARN received SIGTERM indicating exit request
+2026-01-22 18:04:53,106 INFO waiting for fastapi to die
+2026-01-22 18:04:53,106 INFO waiting for fastapi to die
+2026-01-22 18:04:53,752 INFO stopped: fastapi (exit status 0)
+2026-01-22 18:04:53,752 INFO stopped: fastapi (exit status 0)
+2026-01-22 18:04:53,752 INFO reaped unknown pid 8 (exit status 0)
+2026-01-22 18:04:53,752 INFO reaped unknown pid 8 (exit status 0)
+2026-01-22 18:04:54,122 INFO Set uid to user 0 succeeded
+2026-01-22 18:04:54,122 INFO Set uid to user 0 succeeded
+2026-01-22 18:04:54,123 INFO supervisord started with pid 1
+2026-01-22 18:04:54,123 INFO supervisord started with pid 1
+2026-01-22 18:04:55,134 INFO spawned: 'fastapi' with pid 7
+2026-01-22 18:04:55,134 INFO spawned: 'fastapi' with pid 7
+2026-01-22 18:05:00,692 INFO success: fastapi entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
+2026-01-22 18:05:00,692 INFO success: fastapi entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
+INFO:     127.0.0.1:47022 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47032 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41028 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:41042 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43238 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43254 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56588 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:44314 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43154 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59344 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:42216 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58592 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:44566 - "GET /health HTTP/1.1" 404 Not Found
+2026-01-22 18:09:01,328 WARN received SIGTERM indicating exit request
+2026-01-22 18:09:01,328 WARN received SIGTERM indicating exit request
+2026-01-22 18:09:01,331 INFO waiting for fastapi to die
+2026-01-22 18:09:01,331 INFO waiting for fastapi to die
+2026-01-22 18:09:01,589 INFO stopped: fastapi (exit status 0)
+2026-01-22 18:09:01,589 INFO stopped: fastapi (exit status 0)
+2026-01-22 18:09:01,589 INFO reaped unknown pid 8 (exit status 0)
+2026-01-22 18:09:01,589 INFO reaped unknown pid 8 (exit status 0)
+2026-01-22 18:09:01,917 INFO Set uid to user 0 succeeded
+2026-01-22 18:09:01,917 INFO Set uid to user 0 succeeded
+2026-01-22 18:09:01,919 INFO supervisord started with pid 1
+2026-01-22 18:09:01,919 INFO supervisord started with pid 1
+2026-01-22 18:09:02,926 INFO spawned: 'fastapi' with pid 7
+2026-01-22 18:09:02,926 INFO spawned: 'fastapi' with pid 7
+2026-01-22 18:09:08,573 INFO success: fastapi entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
+2026-01-22 18:09:08,573 INFO success: fastapi entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
+INFO:     127.0.0.1:43818 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43828 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39166 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39168 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55338 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55342 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59248 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51294 - "GET /health HTTP/1.1" 404 Not Found

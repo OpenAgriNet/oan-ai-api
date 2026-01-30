@@ -96,7 +96,7 @@ def find_nearest_region(lat, lon):
     logger.debug(f"Nearest region to ({lat}, {lon}) is {nearest} at {min_dist} km")
     return nearest, round(min_dist, 2)
 
-def detect_crop_region(latitude: float, longitude: float) -> RegionDetectionResult:
+async def detect_crop_region(latitude: float, longitude: float) -> RegionDetectionResult:
     """
     Always use forward_geocode to get coordinates from place names, then use this function.
     Detects whether a user is located within one of the supported regions.
@@ -126,7 +126,7 @@ def detect_crop_region(latitude: float, longitude: float) -> RegionDetectionResu
     if not -180 <= longitude <= 180:
         raise ValueError(f"Invalid longitude: {longitude}. Must be between -180 and 180.")
 
-    data = reverse_geocode(latitude, longitude)
+    data = await reverse_geocode(latitude, longitude)
     if not data or not hasattr(data, 'address'):
         return {
             "success": False,
@@ -213,7 +213,7 @@ def find_nearest_livestock_region(lat, lon):
     return nearest, round(min_dist, 2)
 
 
-def detect_livestock_region(latitude: float, longitude: float) -> RegionDetectionResult:
+async def detect_livestock_region(latitude: float, longitude: float) -> RegionDetectionResult:
     """
     Detects whether a user is located within one of the supported livestock regions.
 
@@ -242,7 +242,7 @@ def detect_livestock_region(latitude: float, longitude: float) -> RegionDetectio
     if not -180 <= longitude <= 180:
         raise ValueError(f"Invalid longitude: {longitude}. Must be between -180 and 180.")
 
-    data = reverse_geocode(latitude, longitude)
+    data = await reverse_geocode(latitude, longitude)
     if not data or not hasattr(data, 'address'):
         return {
             "success": False,

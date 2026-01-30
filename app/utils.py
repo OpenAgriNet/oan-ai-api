@@ -58,9 +58,9 @@ async def get_message_history(session_id: str) -> List[ModelMessage]:
             return []
     return []
 
-def _get_moderation_history(session_id: str) -> List[ModelMessage]:
+async def _get_moderation_history(session_id: str) -> List[ModelMessage]:
     """Get or initialize moderation history."""
-    moderation_history = cache.get(f"{session_id}_{HISTORY_SUFFIX}_MODERATION", [])
+    moderation_history = await cache.get(f"{session_id}_{HISTORY_SUFFIX}_MODERATION")
     if moderation_history:
         return ModelMessagesTypeAdapter.validate_python(moderation_history)
     return []
@@ -69,9 +69,9 @@ async def update_message_history(session_id: str, all_messages: List[ModelMessag
     """Update message history."""
     await cache.set(f"{session_id}_{HISTORY_SUFFIX}", to_jsonable_python(all_messages), ttl=DEFAULT_CACHE_TTL)
 
-def update_moderation_history(session_id: str, moderation_messages: List[ModelMessage]):
+async def update_moderation_history(session_id: str, moderation_messages: List[ModelMessage]):
     """Update moderation history."""
-    cache.set(f"{session_id}_{HISTORY_SUFFIX}_MODERATION", to_jsonable_python(moderation_messages), timeout=DEFAULT_CACHE_TTL)
+    await cache.set(f"{session_id}_{HISTORY_SUFFIX}_MODERATION", to_jsonable_python(moderation_messages), ttl=DEFAULT_CACHE_TTL)
 
 def filter_out_tool_calls(messages: List[ModelMessage]) -> List[ModelMessage]:
     """Filter out tool calls and tool returns from the message history.

@@ -158,6 +158,7 @@ async def get_crop_price_in_marketplace(
             .where(
                 MarketPrice.marketplace_id == marketplace.marketplace_id,
                 or_(
+                    # Search in crop name
                     func.lower(Crop.name) == crop_name.lower(),
                     func.lower(Crop.name).contains(crop_name.lower()),
                     func.lower(Crop.name_amharic) == crop_name.lower(),
@@ -189,10 +190,10 @@ async def get_crop_price_in_marketplace(
                 f"{price_row.crop_name} ({price_row.crop_name_amharic}) prices in {marketplace.name}:\n\n"
                 f"* Variety: {price_row.variety_name or 'N/A'}" +
                 (f" ({price_row.variety_name_amharic})" if price_row.variety_name_amharic else "") + "\n"
-                f"* Min Price: {price_row.min_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Max Price: {price_row.max_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Avg Price: {price_row.avg_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                f"* Min Price: {price_row.min_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Max Price: {price_row.max_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
                 f"* Source: https://nmis.et/"
             )
 
@@ -242,10 +243,16 @@ async def compare_crop_prices_nearby(
                 Marketplace.marketplace_type == "crop",
                 Marketplace.is_active == True,
                 or_(
+                    # Search in crop name
                     func.lower(Crop.name) == func.lower(crop_name),
                     func.lower(Crop.name).contains(func.lower(crop_name)),
                     func.lower(Crop.name_amharic) == func.lower(crop_name),
-                    func.lower(Crop.name_amharic).contains(func.lower(crop_name))
+                    func.lower(Crop.name_amharic).contains(func.lower(crop_name)),
+                    # Search in variety name
+                    func.lower(CropVariety.name) == func.lower(crop_name),
+                    func.lower(CropVariety.name).contains(func.lower(crop_name)),
+                    func.lower(CropVariety.name_amharic) == func.lower(crop_name),
+                    func.lower(CropVariety.name_amharic).contains(func.lower(crop_name))
                 ),
                 Crop.category == "agricultural",
                 MarketPrice.price_date >= (func.current_date() - 364)
@@ -271,7 +278,7 @@ async def compare_crop_prices_nearby(
                 f"{idx}. **{market.name}** ({market.region})\n"
                 f"   * Avg: {market.avg_price} ETB/{market.unit or 'unit'}\n"
                 f"   * Range: {market.min_price} - {market.max_price} ETB\n"
-                f"   * Date: {market.price_date.strftime('%Y-%m-%d')}\n"
+                f"   * As of Date: {market.price_date.strftime('%Y-%m-%d')}\n"
                 f"   * Source: https://nmis.et/"
             )
 
@@ -407,10 +414,16 @@ async def get_crop_price_quick(
             .where(
                 MarketPrice.marketplace_id == marketplace.marketplace_id,
                 or_(
+                    # Search in crop name
                     func.lower(Crop.name) == crop_name.lower(),
                     func.lower(Crop.name).contains(crop_name.lower()),
                     func.lower(Crop.name_amharic) == crop_name.lower(),
-                    func.lower(Crop.name_amharic).contains(crop_name.lower())
+                    func.lower(Crop.name_amharic).contains(crop_name.lower()),
+                    # Search in variety name (e.g., "White Teff" should find Teff crop with White Teff variety)
+                    func.lower(CropVariety.name) == crop_name.lower(),
+                    func.lower(CropVariety.name).contains(crop_name.lower()),
+                    func.lower(CropVariety.name_amharic) == crop_name.lower(),
+                    func.lower(CropVariety.name_amharic).contains(crop_name.lower())
                 ),
                 MarketPrice.price_date >= (func.current_date() - 364),
                 Crop.category == "agricultural"
@@ -469,11 +482,11 @@ async def get_crop_price_quick(
                 f"{price_row.crop_name} ({price_row.crop_name_amharic}) prices in {marketplace_name} ({region}):\n\n"
                 f"* Variety: {price_row.variety_name or 'N/A'}" +
                 (f" ({price_row.variety_name_amharic})" if price_row.variety_name_amharic else "") + "\n"
-                f"* Min Price: {price_row.min_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Max Price: {price_row.max_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Avg Price: {price_row.avg_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Modal Price: {price_row.modal_price} ETB/{price_row.unit or 'unit'}\n"
-                f"* Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
+                f"* Min Price: {price_row.min_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Max Price: {price_row.max_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Avg Price: {price_row.avg_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* Modal Price: {price_row.modal_price or 'N/A'} ETB/{price_row.unit or 'unit'}\n"
+                f"* As of Date: {price_row.price_date.strftime('%Y-%m-%d')}\n"
                 f"* Source: https://nmis.et/"
             )
         
