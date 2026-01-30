@@ -7,8 +7,10 @@ from app.models.market import Crop, CropVariety, MarketPrice, Marketplace
 from typing import List, Optional, Tuple, Union
 from sqlalchemy.orm import joinedload
 from helpers.utils import get_logger, log_execution_time
+from app.core.cache import cache
 
-logger = get_logger(__name__)
+CACHE_TTL_PRICE = 900  # 15 minutes
+CACHE_TTL_LIST = 3600  # 1 hour
 
 
 async def _get_marketplace(
@@ -77,6 +79,13 @@ async def list_crops_in_marketplace(
     """
     logger.info(f"list_crops_in_marketplace: marketplace={marketplace_name}, region={region}")
 
+    # Check cache
+    cache_key = f"crops:list:{marketplace_name}:{region or 'none'}"
+    cached_data = await cache.get(cache_key)
+    if cached_data:
+        logger.info(f"Cache HIT for crops list: {cache_key}")
+        return cached_data
+
     async with async_session_maker() as db:
         marketplace, error = await _get_marketplace(db, marketplace_name, region)
         if error:
@@ -106,10 +115,14 @@ async def list_crops_in_marketplace(
             for crop in crops
         ]
 
-        return (
+        result_str = (
             f"Crops available in {marketplace.name} ({marketplace.region}):\n\n" +
             "\n".join(crop_list)
         )
+        
+        # Cache result
+        await cache.set(cache_key, result_str, ttl=CACHE_TTL_LIST)
+        return result_str
 
 
 @log_execution_time
@@ -134,6 +147,13 @@ async def get_crop_price_in_marketplace(
         Formatted price information with date
     """
     logger.info(f"get_crop_price_in_marketplace: crop={crop_name}, marketplace={marketplace_name}, region={region}")
+
+    # Check cache
+    cache_key = f"crop:price:full:{crop_name}:{marketplace_name}:{region or 'none'}"
+    cached_data = await cache.get(cache_key)
+    if cached_data:
+        logger.info(f"Cache HIT for crop price (full): {cache_key}")
+        return cached_data
 
     async with async_session_maker() as db:
         marketplace, error = await _get_marketplace(db, marketplace_name, region)
@@ -199,6 +219,9 @@ async def get_crop_price_in_marketplace(
 
         result_str = "\n\n".join(price_data_varieties.values())
         logger.info(f"💰 Tool Result for {marketplace.name}/{crop_name}: {result_str[:100]}...")
+        
+        # Cache result
+        await cache.set(cache_key, result_str, ttl=CACHE_TTL_PRICE)
         return result_str
 
 
@@ -311,7 +334,15 @@ async def get_crop_price_quick(
     Returns:
         Price information or error message if marketplace/crop not found
     """
+
     logger.info(f"get_crop_price_quick: crop={repr(crop_name)}, marketplace={repr(marketplace_name)}")
+    
+    # Check cache
+    cache_key = f"crop:price:quick:{crop_name}:{marketplace_name}"
+    cached_data = await cache.get(cache_key)
+    if cached_data:
+        logger.info(f"Cache HIT for crop price (quick): {cache_key}")
+        return cached_data
     
     # Defensive trimming
     crop_name = crop_name.strip()
@@ -491,4 +522,9 @@ async def get_crop_price_quick(
             )
         
         logger.info(f"get_crop_price_quick: found {len(price_data_varieties)} varieties")
-        return "\n\n".join(price_data_varieties.values())
+        logger.info(f"get_crop_price_quick: found {len(price_data_varieties)} varieties")
+        result_str = "\n\n".join(price_data_varieties.values())
+        
+        # Cache result
+        await cache.set(cache_key, result_str, ttl=CACHE_TTL_PRICE)
+        return result_str
