@@ -451,8 +451,9 @@ class AgriNetLLMService(FrameProcessor):
                                 logger.critical(f"🗣️ Pushing TTS Chunk: '{sentence}'")
                                 # Normalize for TTS (Amharic numbers)
                                 tts_text = sentence
-                                if self.context.lang_code == 'am':
+                                if self.context.lang_code and self.context.lang_code.lower().startswith('am'):
                                     tts_text = replace_numbers_with_amharic_words(sentence)
+                                    logger.critical(f"🗣️ Pushing TTS Chunk (Converted): '{tts_text}'")
                                 
                                 # Append \n to FORCE FLUSH the aggregator
                                 await self.push_frame(TextFrame(text=tts_text + "\n"))
@@ -467,8 +468,9 @@ class AgriNetLLMService(FrameProcessor):
                          try:
                              logger.critical(f"🗣️ Pushing TTS Buffer (Overflow): '{frame_buffer}'")
                              tts_text = frame_buffer
-                             if self.context.lang_code == 'am':
+                             if self.context.lang_code and self.context.lang_code.lower().startswith('am'):
                                  tts_text = replace_numbers_with_amharic_words(frame_buffer)
+                                 logger.critical(f"🗣️ Pushing TTS Buffer (Converted): '{tts_text}'")
                              await self.push_frame(TextFrame(text=tts_text + "\n"))
                              frame_buffer = ""
                          except Exception as e:
@@ -479,8 +481,9 @@ class AgriNetLLMService(FrameProcessor):
                  try:
                      logger.critical(f"🗣️ Pushing Final TTS Chunk: '{frame_buffer}'")
                      tts_text = frame_buffer
-                     if self.context.lang_code == 'am':
+                     if self.context.lang_code and self.context.lang_code.lower().startswith('am'):
                          tts_text = replace_numbers_with_amharic_words(frame_buffer)
+                         logger.critical(f"🗣️ Pushing Final TTS Chunk (Converted): '{tts_text}'")
                      await self.push_frame(TextFrame(text=tts_text))
                  except Exception as e:
                      logger.warning(f"Frame push failed: {e}")

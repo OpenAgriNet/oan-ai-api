@@ -139,7 +139,7 @@ class FastGeminiService:
                 function_declarations=[
                     types.FunctionDeclaration(
                         name="get_crop_price_quick",
-                        description="Get crop price by marketplace name - FAST VERSION",
+                        description="Get crop price by marketplace name - FAST VERSION. For Amharic queries, extract the marketplace name (e.g. 'በአዳማ'->'Adama') and call this tool IMMEDIATELY. Do NOT list marketplaces first.",
                         parameters=genai.types.Schema(
                             type=genai.types.Type.OBJECT,
                             required=["crop_name", "marketplace_name"],
@@ -150,14 +150,14 @@ class FastGeminiService:
                                 ),
                                 "marketplace_name": genai.types.Schema(
                                     type=genai.types.Type.STRING,
-                                    description="Name of the location/marketplace in Ethiopia (e.g., 'Adama', 'Bishoftu'). Correct typos (e.g. 'Ambr'->'Amber').",
+                                    description="Name of the location/marketplace in Ethiopia (e.g., 'Adama', 'Bishoftu'). Extract from Amharic text (e.g. 'በአዳማ'->'Adama').",
                                 ),
                             },
                         ),
                     ),
                     types.FunctionDeclaration(
                         name="get_livestock_price_quick",
-                        description="Get livestock price by location/marketplace name - FAST VERSION",
+                        description="Get livestock price by location/marketplace name - FAST VERSION. For Amharic queries, extract the marketplace name (e.g. 'በአይሳይታ'->'Aysaita') and call this tool IMMEDIATELY. Do NOT list marketplaces first.",
                         parameters=genai.types.Schema(
                             type=genai.types.Type.OBJECT,
                             required=["livestock_type", "marketplace_name"],
@@ -168,7 +168,7 @@ class FastGeminiService:
                                 ),
                                 "marketplace_name": genai.types.Schema(
                                     type=genai.types.Type.STRING,
-                                    description="Name of the location/marketplace in Ethiopia (e.g., 'Dubti', 'Moyale'). Correct typos (e.g. 'Gupti'->'Dubti').",
+                                    description="Name of the location/marketplace in Ethiopia (e.g., 'Dubti', 'Moyale'). Extract from Amharic text (e.g. 'በአይሳይታ'->'Aysaita').",
                                 ),
                             },
                         ),
@@ -283,6 +283,24 @@ class FastGeminiService:
             thinking_config=types.ThinkingConfig(thinking_level="MINIMAL"),
             tools=self.tools,
             system_instruction=[types.Part.from_text(text=self.system_prompt)],
+            safety_settings=[
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HARASSMENT",
+                    threshold="BLOCK_ONLY_HIGH",
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HATE_SPEECH",
+                    threshold="BLOCK_ONLY_HIGH",
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold="BLOCK_ONLY_HIGH",
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold="BLOCK_ONLY_HIGH",
+                ),
+            ],
         )
         
         logger.info(f"FastGeminiService initialized: model={self.model}, lang={lang}")
@@ -414,7 +432,10 @@ class FastGeminiService:
             if not first_token_recorded:
                 # If we never recorded first token stats, it means we never yielded text
                 logger.warning("⚠️ LLM finished without yielding text! Sending fallback.")
-                yield "I found the information but couldn't summarize it. Please ask again."
+                fallback_msg = "I found the information but couldn't summarize it. Please ask again."
+                if self.lang and self.lang.lower().startswith('am'):
+                    fallback_msg = "መረጃውን አግኝቼዋለሁ ነገር ግን ማጠቃለል አልቻልኩም። እባክዎ እንደገና ይጠይቁ።"
+                yield fallback_msg
             
             metrics['llm_end'] = time.perf_counter()
             
@@ -423,7 +444,11 @@ class FastGeminiService:
             import traceback
             traceback.print_exc()
             metrics['llm_end'] = time.perf_counter()
-            yield f"I encountered an error. Please try again."
+            metrics['llm_end'] = time.perf_counter()
+            error_msg = "I encountered an error. Please try again."
+            if self.lang and self.lang.lower().startswith('am'):
+                error_msg = "ስህተት አጋጥሞኛል። እባክዎ እንደገና ይሞክሩ።"
+            yield error_msg
     
     async def _execute_tool(self, tool_name: str, args: Dict) -> str:
         """Execute a tool and return its result."""
