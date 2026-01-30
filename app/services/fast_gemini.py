@@ -273,6 +273,28 @@ class FastGeminiService:
                             },
                         ),
                     ),
+                    types.FunctionDeclaration(
+                        name="search_documents",
+                        description="Search agricultural knowledge base for crop cultivation, pest management, irrigation, harvesting, fertilizer use, and farming best practices. Queries related to 'how to', 'best practice', 'advice', 'disease', 'pest'.",
+                        parameters=genai.types.Schema(
+                            type=genai.types.Type.OBJECT,
+                            required=["query"],
+                            properties={
+                                "query": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Search query in English. If input is Amharic, translate key concepts to English."
+                                ),
+                                "top_k": genai.types.Schema(
+                                    type=genai.types.Type.INTEGER,
+                                    description="Number of results to retrieve (default: 5)"
+                                ),
+                                "type": genai.types.Schema(
+                                    type=genai.types.Type.STRING,
+                                    description="Optional filter: 'video' or 'document'"
+                                ),
+                            },
+                        ),
+                    ),
                 ]
             )
         ]
@@ -519,6 +541,15 @@ class FastGeminiService:
                 from agents.tools.maps import forward_geocode
                 # Run sync geocoding in thread to avoid blocking loop
                 result = await asyncio.to_thread(forward_geocode, args.get("place_name", ""))
+            elif tool_name == "search_documents":
+                from agents.tools.rag_router import search_documents
+                # Run RAG search in thread (it involves blocking HTTP calls)
+                result = await asyncio.to_thread(
+                    search_documents,
+                    query=args.get("query", ""),
+                    top_k=int(args.get("top_k", 5)),
+                    type=args.get("type")
+                )
             else:
                 result = f"Tool {tool_name} not implemented"
             

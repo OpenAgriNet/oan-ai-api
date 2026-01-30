@@ -57,17 +57,32 @@ async def stream_chat_messages(
     moderation_time = 0
     if enable_moderation:
         stage_start = time.perf_counter()
-        
-        # Phase 2 Optimization: Use FastModerationService (Lightweight)
-        fast_mod = FastModerationService()
-        mod_metrics = {}
-        is_safe, category, action = await fast_mod.moderate(user_message, mod_metrics)
-        
-        moderation_data = json.dumps({"category": category, "action": action})
-        moderation_time = mod_metrics.get('mod_time', (time.perf_counter() - stage_start) * 1000)
-        logger.info(f"⏱️ [TIMING] Moderation agent (optimized): {moderation_time:.2f}ms")
-        
-        deps.update_moderation_str(str(moderation_data))
+        try:
+            pre_mod_result = moderation_classifier.classify(query, lang=target_lang)
+            moderation_time = (time.perf_counter() - stage_start) * 1000
+            logger.info(f"⏱️ [TIMING] Pre-moderation (Classifier): {moderation_time:.2f}ms - {pre_mod_result.reason}")
+            
+            if not pre_mod_result.is_safe:
+                logger.warning(f"User input blocked: {pre_mod_result.label} - {pre_mod_result.reason}")
+                response_data = {
+                    "response": "I'm sorry, but I cannot process this request as it contains potentially harmful content.",
+                    "status": "blocked",
+                    "moderation": {
+                        "stage": "pre",
+                        "label": pre_mod_result.label,
+                        "reason": pre_mod_result.reason
+                    }
+                }
+                yield json.dumps(response_data)
+                return
+            
+            # Allow through if safe
+            deps.update_moderation_str(json.dumps({"stage": "pre", "label": "safe"}))
+
+        except Exception as e:
+            logger.error(f"Pre-moderation failed: {e}. Continuing (fail-open).")
+            moderation_time = (time.perf_counter() - stage_start) * 1000
+            logger.info(f"⏱️ [TIMING] Pre-moderation (failed): {moderation_time:.2f}ms")
     else:
         logger.info(f"⏱️ [TIMING] Pre-moderation: DISABLED (0ms)")
 
