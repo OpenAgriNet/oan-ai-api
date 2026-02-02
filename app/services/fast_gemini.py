@@ -3,6 +3,7 @@ Fast Gemini Service - Direct API calls matching AI Studio code exactly.
 For voice queries where latency is critical.
 """
 import os
+import re
 import time
 import json
 import asyncio
@@ -305,27 +306,30 @@ class FastGeminiService:
             thinking_config=types.ThinkingConfig(thinking_level="MINIMAL"),
             tools=self.tools,
             system_instruction=[types.Part.from_text(text=self.system_prompt)],
-            safety_settings=[
-                types.SafetySetting(
-                    category="HARM_CATEGORY_HARASSMENT",
-                    threshold="BLOCK_ONLY_HIGH",
-                ),
-                types.SafetySetting(
-                    category="HARM_CATEGORY_HATE_SPEECH",
-                    threshold="BLOCK_ONLY_HIGH",
-                ),
-                types.SafetySetting(
-                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    threshold="BLOCK_ONLY_HIGH",
-                ),
-                types.SafetySetting(
-                    category="HARM_CATEGORY_DANGEROUS_CONTENT",
-                    threshold="BLOCK_ONLY_HIGH",
-                ),
-            ],
+            # safety_settings=[
+            #     types.SafetySetting(
+            #         category="HARM_CATEGORY_HARASSMENT",
+            #         threshold="BLOCK_ONLY_HIGH",
+            #     ),
+            #     types.SafetySetting(
+            #         category="HARM_CATEGORY_HATE_SPEECH",
+            #         threshold="BLOCK_ONLY_HIGH",
+            #     ),
+            #     types.SafetySetting(
+            #         category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            #         threshold="BLOCK_ONLY_HIGH",
+            #     ),
+            #     types.SafetySetting(
+            #         category="HARM_CATEGORY_DANGEROUS_CONTENT",
+            #         threshold="BLOCK_ONLY_HIGH",
+            #     ),
+            # ],
         )
         
         logger.info(f"FastGeminiService initialized: model={self.model}, lang={lang}")
+
+
+
     
     async def generate_response(
         self,
@@ -341,6 +345,8 @@ class FastGeminiService:
         t_start = time.perf_counter()
         metrics['llm_start'] = t_start
         
+
+
         contents = [
             types.Content(
                 role="user",
