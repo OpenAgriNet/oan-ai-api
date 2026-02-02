@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     supervisor \
     gcc \
+    g++ \
     python3-dev \
     curl \
     netcat-openbsd \
@@ -18,6 +19,9 @@ COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Download NLTK data
+RUN python3 -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
 
 # Copy application code
 COPY . .

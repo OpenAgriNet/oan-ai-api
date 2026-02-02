@@ -8,6 +8,7 @@ class FarmerContext(BaseModel):
     query: str = Field(description="The user's question.")
     lang_code: str = Field(description="The language code of the user's question.", default='mr')
     moderation_str: Optional[str] = Field(default=None, description="The moderation result of the user's question.")
+    timings: list = Field(default_factory=list, description="Performance timings for steps")
 
     def update_moderation_str(self, moderation_str: str):
         """Update the moderation result of the user's question."""

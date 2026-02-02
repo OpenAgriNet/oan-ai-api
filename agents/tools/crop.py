@@ -2,13 +2,18 @@
 from pydantic_ai import RunContext
 from agents.deps import FarmerContext
 from app.database import async_session_maker
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, literal
 from app.models.market import Crop, CropVariety, MarketPrice, Marketplace
 from typing import List, Optional, Tuple, Union
 from sqlalchemy.orm import joinedload
-from helpers.utils import get_logger
+from helpers.utils import get_logger, log_execution_time
+from app.core.cache import cache
+
+CACHE_TTL_PRICE = 900  # 15 minutes
+CACHE_TTL_LIST = 3600  # 1 hour
 
 logger = get_logger(__name__)
+
 
 
 async def _get_marketplace(
@@ -16,6 +21,7 @@ async def _get_marketplace(
     marketplace_name: str,
     region: Optional[str] = None
 ) -> Tuple[Optional[Marketplace], Optional[str]]:
+
     """
     Internal helper to get marketplace by name, optionally filtered by region.
 
@@ -37,10 +43,16 @@ async def _get_marketplace(
 
     # Filter by region if provided
     if region:
+        # Normalize region input for comparison
+        region_clean = region.strip().lower()
+        
+        # Try exact/contains match on normalized fields
         stmt = stmt.where(
             or_(
-                func.lower(Marketplace.region) == func.lower(region),
-                func.lower(Marketplace.region_amharic) == func.lower(region)
+                func.lower(Marketplace.region) == region_clean,
+                func.lower(Marketplace.region_amharic) == region_clean,
+                func.lower(Marketplace.region).contains(region_clean),
+                func.lower(Marketplace.region_amharic).contains(region_clean)
             )
         )
 
@@ -58,6 +70,7 @@ async def _get_marketplace(
     return None, f"Multiple marketplaces found: {', '.join(regions_list)}. Please specify region."
 
 
+@log_execution_time
 async def list_crops_in_marketplace(
     ctx: RunContext[FarmerContext],
     marketplace_name: str,
@@ -75,6 +88,13 @@ async def list_crops_in_marketplace(
     """
     logger.info(f"list_crops_in_marketplace: marketplace={marketplace_name}, region={region}")
 
+    # Check cache
+    cache_key = f"crops:list:{marketplace_name}:{region or 'none'}"
+    cached_data = await cache.get(cache_key)
+    if cached_data:
+        logger.info(f"Cache HIT for crops list: {cache_key}")
+        return cached_data
+
     async with async_session_maker() as db:
         marketplace, error = await _get_marketplace(db, marketplace_name, region)
         if error:
@@ -90,8 +110,12 @@ async def list_crops_in_marketplace(
             .distinct()
             .order_by(Crop.name)
         )
-        result = await db.execute(stmt)
-        crops = result.scalars().unique().all()
+        try:
+             result = await db.execute(stmt)
+             crops = result.scalars().unique().all()
+        except Exception as e:
+             logger.error(f"Error fetching crops for marketplace {marketplace.name}: {e}")
+             return f"Error fetching data: {str(e)}"
 
         if not crops:
             return f"No crops found in {marketplace.name} marketplace."
@@ -104,12 +128,17 @@ async def list_crops_in_marketplace(
             for crop in crops
         ]
 
-        return (
+        result_str = (
             f"Crops available in {marketplace.name} ({marketplace.region}):\n\n" +
             "\n".join(crop_list)
         )
+        
+        # Cache result
+        await cache.set(cache_key, result_str, ttl=CACHE_TTL_LIST)
+        return result_str
 
 
+@log_execution_time
 async def get_crop_price_in_marketplace(
     ctx: RunContext[FarmerContext],
     marketplace_name: str,
@@ -131,6 +160,13 @@ async def get_crop_price_in_marketplace(
         Formatted price information with date
     """
     logger.info(f"get_crop_price_in_marketplace: crop={crop_name}, marketplace={marketplace_name}, region={region}")
+
+    # Check cache
+    cache_key = f"crop:price:full:{crop_name}:{marketplace_name}:{region or 'none'}"
+    cached_data = await cache.get(cache_key)
+    if cached_data:
+        logger.info(f"Cache HIT for crop price (full): {cache_key}")
+        return cached_data
 
     async with async_session_maker() as db:
         marketplace, error = await _get_marketplace(db, marketplace_name, region)
@@ -160,11 +196,14 @@ async def get_crop_price_in_marketplace(
                     func.lower(Crop.name).contains(crop_name.lower()),
                     func.lower(Crop.name_amharic) == crop_name.lower(),
                     func.lower(Crop.name_amharic).contains(crop_name.lower()),
-                    # Search in variety name (e.g., "White Teff" should find Teff crop with White Teff variety)
+                    # Add Variety Search to handle specific queries like "White Teff"
                     func.lower(CropVariety.name) == crop_name.lower(),
                     func.lower(CropVariety.name).contains(crop_name.lower()),
                     func.lower(CropVariety.name_amharic) == crop_name.lower(),
-                    func.lower(CropVariety.name_amharic).contains(crop_name.lower())
+                    func.lower(CropVariety.name_amharic).contains(crop_name.lower()),
+                    # Inverted: Query contains Crop/Variety Name. Use strpos > 0
+                    func.strpos(literal(crop_name.lower()), func.lower(Crop.name)) > 0,
+                    func.strpos(literal(crop_name.lower()), func.lower(Crop.name_amharic)) > 0
                 ),
                 MarketPrice.price_date >= (func.current_date() - 364),
                 Crop.category == "agricultural"
@@ -191,9 +230,15 @@ async def get_crop_price_in_marketplace(
                 f"* Source: https://nmis.et/"
             )
 
-        return "\n\n".join(price_data_varieties.values())
+        result_str = "\n\n".join(price_data_varieties.values())
+        logger.info(f"💰 Tool Result for {marketplace.name}/{crop_name}: {result_str[:100]}...")
+        
+        # Cache result
+        await cache.set(cache_key, result_str, ttl=CACHE_TTL_PRICE)
+        return result_str
 
 
+@log_execution_time
 async def compare_crop_prices_nearby(
     ctx: RunContext[FarmerContext],
     marketplace_names: List[str],
@@ -276,6 +321,7 @@ async def compare_crop_prices_nearby(
         return "\n\n".join(lines)
 
 
+@log_execution_time
 async def get_crop_price_quick(
     ctx: RunContext[FarmerContext],
     crop_name: str,
@@ -301,13 +347,25 @@ async def get_crop_price_quick(
     Returns:
         Price information or error message if marketplace/crop not found
     """
-    logger.info(f"get_crop_price_quick: crop={crop_name}, marketplace={marketplace_name}")
+
+    logger.info(f"get_crop_price_quick: crop={repr(crop_name)}, marketplace={repr(marketplace_name)}")
     
+    # Check cache
+    cache_key = f"crop:price:quick:{crop_name}:{marketplace_name}"
+    cached_data = await cache.get(cache_key)
+    if cached_data:
+        logger.info(f"Cache HIT for crop price (quick): {cache_key}")
+        return cached_data
+    
+    # Defensive trimming
+    crop_name = crop_name.strip()
+    marketplace_name = marketplace_name.strip()
+
     # Validate parameters - check for vague/generic inputs
     vague_terms = ['crop', 'the crop', 'it', 'that', 'this', 'something', 'anything', 'price', 'market', 'the market']
     
-    crop_lower = crop_name.lower().strip()
-    market_lower = marketplace_name.lower().strip()
+    crop_lower = crop_name.lower()
+    market_lower = marketplace_name.lower()
     
     if crop_lower in vague_terms or len(crop_lower) < 3:
         return "ERROR: I need to know which specific crop you're asking about. Please tell me the crop name (e.g., wheat, teff, barley)."
@@ -326,32 +384,55 @@ async def get_crop_price_quick(
     # Try exact match first
     marketplace_info = EXACT_MATCH_UP_MARKETPLACES.get(marketplace_name)
     
-    # If not found, try case-insensitive exact match
+    # If not found, try fuzzy matching with difflib
     if not marketplace_info:
-        for key, value in EXACT_MATCH_UP_MARKETPLACES.items():
-            key_lower = key.lower()
-            key_clean = key_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+        import difflib
+        
+        # Create a mapping of clean names to original keys for better matching
+        # key_map maps lowercase clean name -> original key
+        key_map = {}
+        all_keys = []
+        
+        for key in EXACT_MATCH_UP_MARKETPLACES.keys():
+            all_keys.append(key)
+            # Add cleaned versions to improve matching chances
+            key_clean = key.lower().replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
+            if key_clean not in key_map:
+                key_map[key_clean] = key
+        
+        # 1. Try matching against the full keys
+        matches = difflib.get_close_matches(name_lower, [k.lower() for k in all_keys], n=1, cutoff=0.7)
+        
+        if matches:
+            # Find the original key that matches this lowercase match
+            matched_lower = matches[0]
+            for key in all_keys:
+                if key.lower() == matched_lower:
+                    marketplace_name = key
+                    marketplace_info = EXACT_MATCH_UP_MARKETPLACES[key]
+                    logger.info(f"Fuzzy matched '{name_lower}' to '{key}' (score via direct match)")
+                    break
+        
+        # 2. If no match yet, try matching against cleaned names (often better for user inputs)
+        if not marketplace_info:
+            clean_input = name_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
             
-            # Exact match (case-insensitive)
-            if key_lower == name_lower or key_clean == clean_name:
-                marketplace_info = value
-                marketplace_name = key  # Use the correct case
-                break
-    
-    # If still not found, try partial matching (e.g., "Adama" matches "Adama City")
-    if not marketplace_info:
-        for key, value in EXACT_MATCH_UP_MARKETPLACES.items():
-            key_lower = key.lower()
-            key_clean = key_lower.replace(" market", "").replace(" gebeya", "").replace(" city", "").strip()
-            
-            # Check if the search term is contained in the marketplace name
-            # or if the marketplace name starts with the search term
-            if (clean_name in key_clean or key_clean.startswith(clean_name) or 
-                clean_name.startswith(key_clean)):
-                marketplace_info = value
-                marketplace_name = key  # Use the correct case
-                logger.info(f"Fuzzy matched '{marketplace_name}' to '{key}'")
-                break
+            # Check for direct match in key_map first (case-insensitive clean match)
+            if clean_input in key_map:
+                 original_key = key_map[clean_input]
+                 marketplace_name = original_key
+                 marketplace_info = EXACT_MATCH_UP_MARKETPLACES[original_key]
+                 logger.info(f"Direct clean match '{clean_input}' to '{original_key}'")
+            else:
+                # Fuzzy match on clean names
+                clean_matches = difflib.get_close_matches(clean_input, list(key_map.keys()), n=1, cutoff=0.6)
+                
+                if clean_matches:
+                    best_clean_match = clean_matches[0]
+                    original_key = key_map[best_clean_match]
+                    marketplace_name = original_key
+                    marketplace_info = EXACT_MATCH_UP_MARKETPLACES[original_key]
+                    logger.info(f"Fuzzy matched '{clean_input}' to '{original_key}' (via clean name)")
     
     if not marketplace_info:
         logger.info(f"get_crop_price_quick: marketplace not found - marketplace_info is None")
@@ -404,9 +485,47 @@ async def get_crop_price_quick(
         result = await db.execute(stmt)
         price_data_list = result.all()
 
+        if not price_data_list and region:
+            logger.info(f"get_crop_price_quick: no price data with region='{region}'. Retrying without region...")
+            # Fallback: Try getting marketplace without region constraint
+            marketplace, error = await _get_marketplace(db, marketplace_name, None)
+            if not error and marketplace:
+                 # Re-run query with new marketplace ID
+                 # We need to rebuild the statement because marketplace.marketplace_id changed
+                 stmt = (
+                    select(
+                        MarketPrice.min_price,
+                        MarketPrice.max_price,
+                        MarketPrice.avg_price,
+                        MarketPrice.modal_price,
+                        MarketPrice.price_date,
+                        MarketPrice.unit,
+                        Crop.name_amharic.label('crop_name_amharic'),
+                        Crop.name.label('crop_name'),
+                        CropVariety.name.label('variety_name'),
+                        CropVariety.name_amharic.label('variety_name_amharic')
+                    )
+                    .join(Crop, MarketPrice.crop_id == Crop.crop_id)
+                    .outerjoin(CropVariety, MarketPrice.variety_id == CropVariety.variety_id)
+                    .where(
+                        MarketPrice.marketplace_id == marketplace.marketplace_id,
+                        or_(
+                            func.lower(Crop.name) == crop_name.lower(),
+                            func.lower(Crop.name).contains(crop_name.lower()),
+                            func.lower(Crop.name_amharic) == crop_name.lower(),
+                            func.lower(Crop.name_amharic).contains(crop_name.lower())
+                        ),
+                        MarketPrice.price_date >= (func.current_date() - 364),
+                        Crop.category == "agricultural"
+                    )
+                    .order_by(MarketPrice.price_date.desc())
+                )
+                 result = await db.execute(stmt)
+                 price_data_list = result.all()
+
         if not price_data_list:
-            logger.info(f"get_crop_price_quick: no price data")
-            return f"No price data found for '{crop_name}' in {marketplace_name} ({region})."
+            logger.info(f"get_crop_price_quick: no price data (fallback included)")
+            return f"No price data found for '{crop_name}' in {marketplace_name}."
 
         price_data_varieties = {}
         for price_row in price_data_list:
@@ -424,4 +543,9 @@ async def get_crop_price_quick(
             )
         
         logger.info(f"get_crop_price_quick: found {len(price_data_varieties)} varieties")
-        return "\n\n".join(price_data_varieties.values())
+        logger.info(f"get_crop_price_quick: found {len(price_data_varieties)} varieties")
+        result_str = "\n\n".join(price_data_varieties.values())
+        
+        # Cache result
+        await cache.set(cache_key, result_str, ttl=CACHE_TTL_PRICE)
+        return result_str
