@@ -89,6 +89,10 @@ class InstrumentedAzureTTSService(AzureTTSService):
         self.metrics = metrics
         self._audio_frame_count = 0
         super().__init__(*args, **kwargs)
+        # CRITICAL: Override pause_frame_processing AFTER parent init
+        # AzureTTSService hardcodes this to True, but we need False for multi-turn
+        # Without this, TTS blocks after first response waiting for BotStoppedSpeakingFrame
+        self._pause_frame_processing = False
         
     async def process_frame(self, frame, direction):
         if (isinstance(frame, TextFrame) or hasattr(frame, 'text')) and not isinstance(frame, TranscriptionFrame):
@@ -421,10 +425,10 @@ class AgriNetLLMService(FrameProcessor):
             # CRITICAL: Force TTS Reset for Multi-Turn Stability
             # Send an EndFrame to flush any previous state in the TTS service
             # This ensures it's ready for the new turn.
-            try:
-                logger.critical("🔄 AgriNet: Forcing TTS Reset (EndFrame) before new turn")
-                await self.push_frame(EndFrame())
-            except: pass
+            # try:
+            #     logger.critical("🔄 AgriNet: Forcing TTS Reset (EndFrame) before new turn")
+            #     await self.push_frame(EndFrame())
+            # except: pass
 
             logger.info(f"🚀 Starting FAST LLM Generation...")
             
@@ -792,6 +796,7 @@ async def run_pipecat_pipeline(websocket: WebSocket, session_id: str, lang: str 
     selected_voice = "en-US-AriaNeural" if lang == "en" else "am-ET-MekdesNeural"
     
     # Use Instrumented service for metrics
+    # NOTE: pause_frame_processing is set to False inside InstrumentedAzureTTSService.__init__
     tts = InstrumentedAzureTTSService(
         metrics=metrics,
         api_key=azure_key,
