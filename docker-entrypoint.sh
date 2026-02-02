@@ -22,14 +22,18 @@ else
   echo "⚠ Alembic not found, skipping migrations"
 fi
 
-# Run the data scrapers
+# Run the data scrapers (only if explicitly enabled via env var)
 echo ""
-echo "Running data scrapers..."
-if [ -f "/app/scripts/run_all_scrapers.py" ]; then
-  python /app/scripts/run_all_scrapers.py
-  echo "✓ Data scrapers completed"
+if [ "${RUN_SCRAPERS_ON_STARTUP:-false}" = "true" ]; then
+  echo "Running data scrapers (RUN_SCRAPERS_ON_STARTUP=true)..."
+  if [ -f "/app/scripts/run_all_scrapers.py" ]; then
+    python /app/scripts/run_all_scrapers.py &
+    echo "✓ Data scrapers started in background"
+  else
+    echo "⚠ Scraper script not found at /app/scripts/run_all_scrapers.py"
+  fi
 else
-  echo "⚠ Scraper script not found at /app/scripts/run_all_scrapers.py"
+  echo "⏭️ Skipping data scrapers (set RUN_SCRAPERS_ON_STARTUP=true to enable)"
 fi
 
 # Start the FastAPI application with supervisor

@@ -510,8 +510,8 @@ class FastGeminiService:
                 if (lat is None or lon is None) and place_name:
                     from agents.tools.maps import forward_geocode
                     logger.info(f"📍 Internal Geocoding for weather: {place_name}")
-                    # Run sync geocoding in thread
-                    loc_result = await asyncio.to_thread(forward_geocode, place_name)
+                    # Run async geocoding directly (it handles threading internally)
+                    loc_result = await forward_geocode(place_name)
                     if loc_result:
                         lat = loc_result.latitude
                         lon = loc_result.longitude
@@ -539,8 +539,8 @@ class FastGeminiService:
                     result = await get_weather_forecast(forecast_input)
             elif tool_name == "forward_geocode":
                 from agents.tools.maps import forward_geocode
-                # Run sync geocoding in thread to avoid blocking loop
-                result = await asyncio.to_thread(forward_geocode, args.get("place_name", ""))
+                # Run async geocoding directly
+                result = await forward_geocode(args.get("place_name", ""))
             elif tool_name == "search_documents":
                 from agents.tools.rag_router import search_documents
                 # Run RAG search in thread (it involves blocking HTTP calls)

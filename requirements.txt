@@ -7,91 +7,75 @@ gunicorn
 python-dotenv
 requests
 httpx
+typing-extensions>=4.12.0
 
 # Data Handling
 pandas
 simplejson
 
-# Database (if needed for future use)
+# Database
 sqlalchemy
 alembic
-psycopg2-binary==2.9.9
-psycopg[pool]==3.2.6   # for connection pooling
-asyncpg==0.31.0
-requests
+psycopg2-binary
+psycopg[pool]
+asyncpg
 
-# LLM
+# LLM & AI
 openai
-pydantic==2.12.5
+pydantic>=2.0.0
+pydantic-ai
+google-genai
 tiktoken
 tenacity
 transformers
-# Logfire
 logfire
 
 # Caching
 redis
 aiocache
 
-# Authentication (FastAPI compatible)
+# Authentication
 PyJWT
 cryptography
 
-# Language and Localization
+# Utils
 langcodes
 language-data
-
-# File Processing
 openpyxl
-
-# Template Engine
 jinja2
-
-# Pydantic AI 
-pydantic-ai==1.42.0
-google-genai==1.57.0
 asgiref
 
-
-gunicorn
-uvicorn
-httpx
-marqo==3.11.0
-
-# Tenacity
-tenacity
-langcodes
-
-# AWS
-boto3
-
-# Azure
-azure-cognitiveservices-speech==1.47.0
-
-# VAD
-soundfile
-torch==2.9.1
-torchaudio==2.9.1
-
-# Mapbox Geocoding
-geopy
-
-rapidfuzz
-fastapi
-aiocache
-
-# Pipecat
-pipecat-ai[silero,rnnoise]
-onnxruntime
-
-# data conversion
-convertdate
-
-# Cosdata Vector Database Client
+# Vector DB
+marqo
 cosdata-client>=0.2.2
-
-# Sentence Transformers for local embeddings (Cosdata RAG)
 sentence-transformers>=2.2.0
 
-# Language data for langcodes
-language-data>=1.4.0
+# AWS & Azure
+boto3
+azure-cognitiveservices-speech
+azure-core
+
+# Audio & VAD
+soundfile
+torch  # Unpinned to avoid resolution hangs
+torchaudio
+pipecat-ai[silero,rnnoise]
+onnxruntime
+pyrnnoise
+
+# Geocoding
+geopy
+rapidfuzz
+convertdate
+
+# Other dependencies
+wait_for2
+aiofiles
+pyloudnorm
+resampy
+numba
+llvmlite
+sympy
+scipy
+click
+charset-normalizer
