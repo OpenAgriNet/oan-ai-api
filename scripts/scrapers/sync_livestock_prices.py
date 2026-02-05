@@ -87,8 +87,9 @@ async def upsert_livestock_price(db, marketplace_id: int, price_data_list: list)
         variations = []
 
         for item in price_data_list:
-            pmin = item.get("pmin", 0) or 0
-            pmax = item.get("pmax", 0) or 0
+            # Convert to float to handle both string and numeric values
+            pmin = float(item.get("pmin", 0) or 0)
+            pmax = float(item.get("pmax", 0) or 0)
 
             if pmin > 0:
                 all_mins.append(pmin)
@@ -194,12 +195,16 @@ async def sync_livestock_prices():
 
             for i, marketplace in enumerate(marketplaces, 1):
                 try:
+                    # Extract marketplace info early to avoid lazy loading issues
+                    marketplace_id = marketplace.marketplace_id
+                    marketplace_name = marketplace.name
+                    
                     # Fetch prices for this marketplace
-                    prices = await fetch_livestock_prices(marketplace.marketplace_id)
+                    prices = await fetch_livestock_prices(marketplace_id)
 
                     if prices:
                         stats["marketplaces_with_prices"] += 1
-                        print(f"\n[{i}/{len(marketplaces)}] {marketplace.name}")
+                        print(f"\n[{i}/{len(marketplaces)}] {marketplace_name}")
                         print(f"  Found {len(prices)} livestock price entries")
 
                         # Group prices by (livestock_name, breed_name) to aggregate variations
@@ -215,7 +220,7 @@ async def sync_livestock_prices():
                         for (livestock_name, breed_name), price_list in grouped_prices.items():
                             try:
                                 # Insert/update aggregated price
-                                result = await upsert_livestock_price(db, marketplace.marketplace_id, price_list)
+                                result = await upsert_livestock_price(db, marketplace_id, price_list)
 
                                 if result["action"] == "inserted":
                                     stats["prices_inserted"] += 1
@@ -238,7 +243,7 @@ async def sync_livestock_prices():
 
                 except Exception as e:
                     stats["errors"] += 1
-                    logger.error(f"Error for marketplace {marketplace.name}: {e}")
+                    logger.error(f"Error for marketplace {marketplace_name if 'marketplace_name' in locals() else 'unknown'}: {e}")
 
             print("\n" + "=" * 80)
             logger.info("✓ Livestock prices sync complete!")

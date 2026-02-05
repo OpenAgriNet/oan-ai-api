@@ -127,11 +127,15 @@ async def sync_crops():
 
             for i, marketplace in enumerate(marketplaces, 1):
                 try:
+                    # Extract marketplace info early to avoid lazy loading issues
+                    marketplace_id = marketplace.marketplace_id
+                    marketplace_name = marketplace.name
+                    
                     # Fetch crops for this marketplace
-                    crop_data_list = await fetch_marketplace_crops(marketplace.marketplace_id)
+                    crop_data_list = await fetch_marketplace_crops(marketplace_id)
 
                     if crop_data_list:
-                        print(f"\n[{i}/{len(marketplaces)}] {marketplace.name}")
+                        print(f"\n[{i}/{len(marketplaces)}] {marketplace_name}")
                         print(f"  Found {len(crop_data_list)} items")
 
                         for crop_data in crop_data_list:
@@ -159,7 +163,7 @@ async def sync_crops():
                     stats["marketplaces_processed"] += 1
 
                 except Exception as e:
-                    logger.error(f"Error for marketplace {marketplace.name}: {e}")
+                    logger.error(f"Error for marketplace {marketplace_name if 'marketplace_name' in locals() else 'unknown'}: {e}")
 
             print("\n" + "=" * 80)
             logger.info("✓ Crop sync complete!")

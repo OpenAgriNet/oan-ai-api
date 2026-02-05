@@ -269,21 +269,25 @@ async def sync_livestock_prices():
         
         for i, marketplace in enumerate(marketplaces, 1):
             try:
+                # Extract marketplace info early to avoid lazy loading issues
+                marketplace_id = marketplace.marketplace_id
+                marketplace_name = marketplace.name
+                
                 # Get all existing price records for this marketplace (to track untouched ones)
                 existing_prices_result = await db.execute(
                     select(MarketPrice.price_id, MarketPrice.livestock_id, MarketPrice.breed_id, MarketPrice.price_date)
-                    .where(MarketPrice.marketplace_id == marketplace.marketplace_id)
+                    .where(MarketPrice.marketplace_id == marketplace_id)
                 )
                 existing_prices = {row.price_id: row for row in existing_prices_result.fetchall()}
                 
                 # Fetch history table using dynamic IDs
-                data = await fetch_livestock_prices_table(marketplace.marketplace_id, livestock_ids)
+                data = await fetch_livestock_prices_table(marketplace_id, livestock_ids)
                 
                 if not data:
-                    print(f"[{i}/{len(marketplaces)}] {marketplace.name}: No data", end="\n")
+                    print(f"[{i}/{len(marketplaces)}] {marketplace_name}: No data", end="\n")
                     continue
                     
-                print(f"[{i}/{len(marketplaces)}] {marketplace.name}: Fetched {len(data)} rows", end="\n")
+                print(f"[{i}/{len(marketplaces)}] {marketplace_name}: Fetched {len(data)} rows", end="\n")
                 
                 # Group by (Name, Breed) to find LATEST date only
                 latest_dates: Dict[Tuple[str, Optional[str]], date] = {}
@@ -317,7 +321,7 @@ async def sync_livestock_prices():
                         grouped[(name, breed, p_date)].append(item)
                 
                 # Upsert only latest date records
-                stats = await upsert_aggregated_prices(db, marketplace.marketplace_id, marketplace.name, grouped)
+                stats = await upsert_aggregated_prices(db, marketplace_id, marketplace_name, grouped)
                 total_inserted += stats["inserted"]
                 total_updated += stats["updated"]
                 total_skipped += stats["skipped"]
@@ -329,7 +333,7 @@ async def sync_livestock_prices():
                 for price_id in untouched_ids:
                     record = existing_prices[price_id]
                     all_untouched_records.append({
-                        "marketplace": marketplace.name,
+                        "marketplace": marketplace_name,
                         "price_id": price_id,
                         "livestock_id": record.livestock_id,
                         "breed_id": record.breed_id,
@@ -339,7 +343,7 @@ async def sync_livestock_prices():
                 print(f" -> {stats['updated']} updated, {stats['skipped']} skipped, {len(untouched_ids)} untouched")
 
             except Exception as e:
-                logger.error(f"Error processing {marketplace.name}: {e}")
+                logger.error(f"Error processing {marketplace_name if 'marketplace_name' in locals() else 'unknown'}: {e}")
                 print()
 
         print("=" * 80)
