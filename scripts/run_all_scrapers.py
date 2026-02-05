@@ -70,6 +70,8 @@ async def run_all():
         ("livestock_varieties", "scripts.scrapers.sync_livestock_varieties"),
         ("crop_prices", "scripts.scrapers.sync_crop_prices"),
         ("livestock_prices", "scripts.scrapers.sync_livestock_prices"),
+        ("crop_prices_collected_at", "scripts.scrapers.sync_crop_prices_table"),
+        ("livestock_prices_collected_at", "scripts.scrapers.sync_livestock_prices_table"),
     ]
 
     results = {}
