@@ -32,9 +32,9 @@ logger = get_logger(__name__)
 
 async def fetch_livestock_prices(marketplace_id: int):
     """Fetch current livestock prices for a specific marketplace"""
-    url = f"http://nmis.et/api/web-livestock/getCurrentMarketData/{marketplace_id}/en"
+    url = f"https://nmis.et/api/web-livestock/getCurrentMarketData/{marketplace_id}/en"
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         try:
             response = await client.get(url)
             if response.status_code == 200:
@@ -50,15 +50,15 @@ async def upsert_livestock_price(db, marketplace_id: int, price_data_list: list)
     try:
         # Group by (livestock_name, breed_name) - these should all be the same
         first_item = price_data_list[0]
-        livestock_name = first_item.get("cName")
+        livestock_name = first_item.get("cName", "").strip()  # Strip whitespace!
         breed_name = first_item.get("varietyName", "").strip() if first_item.get("varietyName") else None
 
         if not livestock_name:
             raise ValueError("cName (livestock name) is required")
 
-        # Find livestock by name
+        # Find livestock by name - use case-insensitive matching
         livestock_result = await db.execute(
-            select(Livestock).where(Livestock.name == livestock_name)
+            select(Livestock).where(Livestock.name.ilike(livestock_name))
         )
         livestock = livestock_result.scalar_one_or_none()
 

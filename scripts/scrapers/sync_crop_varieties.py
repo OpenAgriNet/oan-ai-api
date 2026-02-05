@@ -25,10 +25,10 @@ logger = get_logger(__name__)
 
 async def fetch_marketplace_crops(marketplace_id: int):
     """Fetch crop data including varieties for a specific marketplace in both English and Amharic"""
-    url_en = f"http://nmis.et/api/web/getCurrentMarketData/{marketplace_id}/en"
-    url_am = f"http://nmis.et/api/web/getCurrentMarketData/{marketplace_id}/am"
+    url_en = f"https://nmis.et/api/web/getCurrentMarketData/{marketplace_id}/en"
+    url_am = f"https://nmis.et/api/web/getCurrentMarketData/{marketplace_id}/am"
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         try:
             # Fetch both languages
             response_en = await client.get(url_en)

@@ -27,9 +27,9 @@ logger = get_logger(__name__)
 
 async def fetch_marketplace_crops(marketplace_id: int):
     """Fetch crop price data for a specific marketplace"""
-    url = f"http://nmis.et/api/web/getCurrentMarketData/{marketplace_id}/en"
+    url = f"https://nmis.et/api/web/getCurrentMarketData/{marketplace_id}/en"
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         try:
             response = await client.get(url)
             if response.status_code == 200:

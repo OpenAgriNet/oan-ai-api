@@ -25,12 +25,12 @@ logger = get_logger(__name__)
 # API URL patterns for both languages and types
 API_PATTERNS = {
     "crop": {
-        "en": "http://nmis.et/api/web/listMarketPlaces/en/0",
-        "am": "http://nmis.et/api/web/listMarketPlaces/am/0"
+        "en": "https://nmis.et/api/web/listMarketPlaces/en/0",
+        "am": "https://nmis.et/api/web/listMarketPlaces/am/0"
     },
     "livestock": {
-        "en": "http://nmis.et/api/web-livestock/listMarketPlaces/en/0",
-        "am": "http://nmis.et/api/web-livestock/listMarketPlaces/am/0"
+        "en": "https://nmis.et/api/web-livestock/listMarketPlaces/en/0",
+        "am": "https://nmis.et/api/web-livestock/listMarketPlaces/am/0"
     }
 }
 
@@ -41,7 +41,7 @@ async def fetch_marketplaces_bilingual(market_type: str) -> Tuple[List[Dict], Li
     
     logger.info(f"Fetching {market_type} marketplace data in English and Amharic...")
     
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         # Fetch both languages concurrently
         en_response, am_response = await asyncio.gather(
             client.get(urls["en"]),
