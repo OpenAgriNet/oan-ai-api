@@ -214,8 +214,8 @@ async def upsert_crop_price(db, marketplace_id: int, price_data_list: list) -> D
         return {"action": action, "crop_name": crop_name, "variety_name": variety_name, "variation_count": len(variations)}
 
     except Exception as e:
-        await db.rollback()
-        raise
+        logger.error(f"Error processing crop price: {str(e)}")
+        return {"action": "error", "crop_name": None, "variety_name": None, "error": str(e)}
 
 
 async def sync_prices():

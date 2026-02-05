@@ -107,8 +107,8 @@ async def upsert_livestock(db, livestock_data: Dict[str, Any]) -> Dict[str, Any]
         return {"action": action, "livestock_id": livestock_id, "livestock_name": livestock_name}
 
     except Exception as e:
-        await db.rollback()
-        raise
+        logger.error(f"Error processing livestock : {str(e)}")
+        return {"action": "error", "livestock_name": None, "error": str(e)}
 
 
 async def sync_livestock():

@@ -47,122 +47,127 @@ async def fetch_livestock_prices(marketplace_id: int):
 
 async def upsert_livestock_price(db, marketplace_id: int, price_data_list: list) -> Dict[str, Any]:
     """Insert or update livestock price in market_prices table (aggregates multiple variations)"""
-    # Group by (livestock_name, breed_name) - these should all be the same
-    first_item = price_data_list[0]
-    livestock_name = first_item.get("cName", "").strip()  # Strip whitespace!
-    breed_name = first_item.get("varietyName", "").strip() if first_item.get("varietyName") else None
+    try:
+        # Group by (livestock_name, breed_name) - these should all be the same
+        first_item = price_data_list[0]
+        livestock_name = first_item.get("cName", "").strip()  # Strip whitespace!
+        breed_name = first_item.get("varietyName", "").strip() if first_item.get("varietyName") else None
 
-    if not livestock_name:
-        raise ValueError("cName (livestock name) is required")
+        if not livestock_name:
+            raise ValueError("cName (livestock name) is required")
 
-    # Find livestock by name - use case-insensitive matching
-    livestock_result = await db.execute(
-        select(Livestock).where(Livestock.name.ilike(livestock_name))
-    )
-    livestock = livestock_result.scalar_one_or_none()
+        # Find livestock by name - use case-insensitive matching
+        livestock_result = await db.execute(
+            select(Livestock).where(Livestock.name.ilike(livestock_name))
+        )
+        livestock = livestock_result.scalar_one_or_none()
 
-    if not livestock:
-        raise ValueError(f"Livestock '{livestock_name}' not found in database")
+        if not livestock:
+            raise ValueError(f"Livestock '{livestock_name}' not found in database")
 
-    livestock_id = livestock.livestock_id
+        livestock_id = livestock.livestock_id
 
-    # Handle breed if present
-    breed_id = None
-    if breed_name:
-        breed_result = await db.execute(
-            select(LivestockBreed).where(
+        # Handle breed if present
+        breed_id = None
+        if breed_name:
+            breed_result = await db.execute(
+                select(LivestockBreed).where(
+                    and_(
+                        LivestockBreed.livestock_id == livestock_id,
+                        LivestockBreed.name == breed_name
+                    )
+                )
+            )
+            breed = breed_result.scalar_one_or_none()
+            if breed:
+                breed_id = breed.breed_id
+        # Aggregate prices from all variations
+        all_mins = []
+        all_maxs = []
+        variations = []
+
+        for item in price_data_list:
+            # Convert to float to handle both string and numeric values
+            pmin = float(item.get("pmin", 0) or 0)
+            pmax = float(item.get("pmax", 0) or 0)
+
+            if pmin > 0:
+                all_mins.append(pmin)
+            if pmax > 0:
+                all_maxs.append(pmax)
+
+            # Store full variation details
+            variations.append({
+                "grade": item.get("grade"),
+                "productionType": item.get("productionType"),
+                "location": item.get("location"),
+                "gender": item.get("gender"),
+                "age": item.get("age"),
+                "pmin": pmin if pmin > 0 else None,
+                "pmax": pmax if pmax > 0 else None,
+                "volume": item.get("volume")
+            })
+
+        # Calculate aggregated prices
+        if all_mins or all_maxs:
+            min_price = min(all_mins) if all_mins else (min(all_maxs) if all_maxs else None)
+            max_price = max(all_maxs) if all_maxs else (max(all_mins) if all_mins else None)
+
+            # Average of all individual prices
+            all_prices = all_mins + all_maxs
+            avg_price = sum(all_prices) / len(all_prices) if all_prices else None
+        else:
+            min_price = None
+            max_price = None
+            avg_price = None
+
+        # Use today's date as price date
+        price_date = date.today()
+
+        # Check if price exists
+        result = await db.execute(
+            select(MarketPrice).where(
                 and_(
-                    LivestockBreed.livestock_id == livestock_id,
-                    LivestockBreed.name == breed_name
+                    MarketPrice.marketplace_id == marketplace_id,
+                    MarketPrice.livestock_id == livestock_id,
+                    MarketPrice.breed_id == breed_id if breed_id else MarketPrice.breed_id.is_(None),
+                    MarketPrice.price_date == price_date
                 )
             )
         )
-        breed = breed_result.scalar_one_or_none()
-        if breed:
-            breed_id = breed.breed_id
-    # Aggregate prices from all variations
-    all_mins = []
-    all_maxs = []
-    variations = []
+        existing = result.scalar_one_or_none()
 
-    for item in price_data_list:
-        # Convert to float to handle both string and numeric values
-        pmin = float(item.get("pmin", 0) or 0)
-        pmax = float(item.get("pmax", 0) or 0)
-
-        if pmin > 0:
-            all_mins.append(pmin)
-        if pmax > 0:
-            all_maxs.append(pmax)
-
-        # Store full variation details
-        variations.append({
-            "grade": item.get("grade"),
-            "productionType": item.get("productionType"),
-            "location": item.get("location"),
-            "gender": item.get("gender"),
-            "age": item.get("age"),
-            "pmin": pmin if pmin > 0 else None,
-            "pmax": pmax if pmax > 0 else None,
-            "volume": item.get("volume")
-        })
-
-    # Calculate aggregated prices
-    if all_mins or all_maxs:
-        min_price = min(all_mins) if all_mins else (min(all_maxs) if all_maxs else None)
-        max_price = max(all_maxs) if all_maxs else (max(all_mins) if all_mins else None)
-
-        # Average of all individual prices
-        all_prices = all_mins + all_maxs
-        avg_price = sum(all_prices) / len(all_prices) if all_prices else None
-    else:
-        min_price = None
-        max_price = None
-        avg_price = None
-
-    # Use today's date as price date
-    price_date = date.today()
-
-    # Check if price exists
-    result = await db.execute(
-        select(MarketPrice).where(
-            and_(
-                MarketPrice.marketplace_id == marketplace_id,
-                MarketPrice.livestock_id == livestock_id,
-                MarketPrice.breed_id == breed_id if breed_id else MarketPrice.breed_id.is_(None),
-                MarketPrice.price_date == price_date
+        if existing:
+            # Update
+            existing.min_price = min_price
+            existing.max_price = max_price
+            existing.avg_price = avg_price
+            existing.unit = "Head"
+            existing.meta_data = {"variations": variations, "variation_count": len(variations)}
+            existing.fetched_at = datetime.now(timezone.utc)
+            action = "updated"
+        else:
+            # Insert
+            price = MarketPrice(
+                marketplace_id=marketplace_id,
+                livestock_id=livestock_id,
+                breed_id=breed_id,
+                min_price=min_price,
+                max_price=max_price,
+                avg_price=avg_price,
+                unit="Head",
+                price_date=price_date,
+                meta_data={"variations": variations, "variation_count": len(variations)}
             )
-        )
-    )
-    existing = result.scalar_one_or_none()
+            db.add(price)
+            action = "inserted"
 
-    if existing:
-        # Update
-        existing.min_price = min_price
-        existing.max_price = max_price
-        existing.avg_price = avg_price
-        existing.unit = "Head"
-        existing.meta_data = {"variations": variations, "variation_count": len(variations)}
-        existing.fetched_at = datetime.now(timezone.utc)
-        action = "updated"
-    else:
-        # Insert
-        price = MarketPrice(
-            marketplace_id=marketplace_id,
-            livestock_id=livestock_id,
-            breed_id=breed_id,
-            min_price=min_price,
-            max_price=max_price,
-            avg_price=avg_price,
-            unit="Head",
-            price_date=price_date,
-            meta_data={"variations": variations, "variation_count": len(variations)}
-        )
-        db.add(price)
-        action = "inserted"
+        await db.flush()  # Use flush instead of commit - commit will be called by caller
+        return {"action": action, "livestock_name": livestock_name, "breed_name": breed_name, "variation_count": len(variations)}
 
-    await db.flush()  # Use flush instead of commit - commit will be called by caller
-    return {"action": action, "livestock_name": livestock_name, "breed_name": breed_name, "variation_count": len(variations)}
+    except Exception as e:
+        logger.error(f"Error processing livestock price: {str(e)}")
+        return {"action": "error", "livestock_name": None, "breed_name": None, "error": str(e)}
 
 
 async def sync_livestock_prices():

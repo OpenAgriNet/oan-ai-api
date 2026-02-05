@@ -98,8 +98,8 @@ async def upsert_crop(db, crop_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"action": action, "crop_id": crop_id, "crop_name": crop_name}
 
     except Exception as e:
-        await db.rollback()
-        raise
+        logger.error(f"Error processing crop : {str(e)}")
+        return {"action": "error", "crop_name": None, "error": str(e)}
 
 
 async def sync_crops():

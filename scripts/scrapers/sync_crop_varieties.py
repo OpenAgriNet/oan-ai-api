@@ -133,10 +133,10 @@ async def upsert_variety(db, variety_data: Dict[str, Any]) -> Dict[str, Any]:
             "variety_name": variety_name,
             "crop_name": crop_en.name
         }
-
     except Exception as e:
-        await db.rollback()
-        raise
+        logger.error(f"Error processing variety: {str(e)}")
+        return {"action": "error", "variety_name": None, "error": str(e)}
+
 
 
 async def sync_varieties():
