@@ -443,5 +443,10 @@ async def sync_crop_prices():
             print("\n" + "=" * 80)
 
 
+async def main():
+    """Main function"""
+    await sync_crop_prices()
+
+
 if __name__ == "__main__":
-    asyncio.run(sync_crop_prices())
+    asyncio.run(main())

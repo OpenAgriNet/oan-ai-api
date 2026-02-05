@@ -406,5 +406,10 @@ async def sync_livestock_prices():
             print("\n" + "=" * 80)
 
 
+async def main():
+    """Main function"""
+    await sync_livestock_prices()
+
+
 if __name__ == "__main__":
-    asyncio.run(sync_livestock_prices())
+    asyncio.run(main())
