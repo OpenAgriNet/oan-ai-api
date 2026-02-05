@@ -210,7 +210,7 @@ async def upsert_crop_price(db, marketplace_id: int, price_data_list: list) -> D
             db.add(price)
             action = "inserted"
 
-        await db.commit()
+        await db.flush()  # Use flush instead of commit - commit will be called by caller
         return {"action": action, "crop_name": crop_name, "variety_name": variety_name, "variation_count": len(variations)}
 
     except Exception as e:
@@ -282,6 +282,9 @@ async def sync_prices():
                             except Exception as e:
                                 stats["errors"] += 1
                                 logger.error(f"Error processing price {crop_name}: {e}")
+
+                        # Commit all changes after processing all items for this marketplace
+                        await db.commit()
 
                     else:
                         stats["marketplaces_without_prices"] += 1

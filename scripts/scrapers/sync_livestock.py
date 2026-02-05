@@ -103,7 +103,7 @@ async def upsert_livestock(db, livestock_data: Dict[str, Any]) -> Dict[str, Any]
             action = "inserted"
             livestock_id = livestock.livestock_id
 
-        await db.commit()
+        await db.flush()  # Use flush instead of commit - commit will be called by caller
         return {"action": action, "livestock_id": livestock_id, "livestock_name": livestock_name}
 
     except Exception as e:
@@ -168,6 +168,9 @@ async def sync_livestock():
                             except Exception as e:
                                 stats["errors"] += 1
                                 logger.error(f"Error processing livestock {livestock_name}: {e}")
+
+                        # Commit all changes after processing all items for this marketplace
+                        await db.commit()
 
                     stats["marketplaces_processed"] += 1
 

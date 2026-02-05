@@ -126,7 +126,7 @@ async def upsert_variety(db, variety_data: Dict[str, Any]) -> Dict[str, Any]:
             action = "inserted"
             variety_id = variety.variety_id
 
-        await db.commit()
+        await db.flush()  # Use flush instead of commit - commit will be called by caller
         return {
             "action": action,
             "variety_id": variety_id,
@@ -203,6 +203,9 @@ async def sync_varieties():
                             except Exception as e:
                                 stats["errors"] += 1
                                 logger.error(f"Error processing variety {variety_name}: {e}")
+
+                        # Commit all changes after processing all items for this marketplace
+                        await db.commit()
 
                     stats["marketplaces_processed"] += 1
 

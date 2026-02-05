@@ -94,7 +94,7 @@ async def upsert_crop(db, crop_data: Dict[str, Any]) -> Dict[str, Any]:
             action = "inserted"
             crop_id = crop.crop_id
 
-        await db.commit()
+        await db.flush()  # Use flush instead of commit - commit will be called by caller
         return {"action": action, "crop_id": crop_id, "crop_name": crop_name}
 
     except Exception as e:
@@ -159,6 +159,9 @@ async def sync_crops():
                             except Exception as e:
                                 stats["errors"] += 1
                                 logger.error(f"Error processing crop {crop_name}: {e}")
+
+                        # Commit all changes after processing all items for this marketplace
+                        await db.commit()
 
                     stats["marketplaces_processed"] += 1
 
