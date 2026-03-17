@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 Centre for Open Societal Systems (COSS), as part of the OpenAgriNet initiative
+Copyright (c) 2026 OpenAgriNet 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
