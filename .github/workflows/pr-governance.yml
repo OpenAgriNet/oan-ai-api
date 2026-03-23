@@ -13,11 +13,6 @@ on:
       - submitted
       - edited
       - dismissed
-  pull_request_review_thread:
-    types:
-      - resolved
-      - unresolved
-
 permissions:
   contents: read
   pull-requests: read
