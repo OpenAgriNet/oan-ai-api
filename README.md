@@ -147,6 +147,24 @@ curl -X GET "http://localhost:8000/suggestions?session_id=your_session_id&target
 
 For detailed API documentation including request/response schemas, please see [API_REFERENCE.md](docs/api.md)
 
+## Training Telemetry Events
+
+The chat service emits structured training telemetry log lines (`training_event=...`) for:
+
+- `user`
+- `assistant`
+- `tool_call`
+- `tool_result`
+- `error`
+
+Schema details: [docs/training_pipeline/log_event_schema.md](docs/training_pipeline/log_event_schema.md)
+
+Validate exported/extracted telemetry lines:
+
+```bash
+python -m helpers.validate_training_events --input path/to/events.jsonl
+```
+
 ## Contributing
 
 Contribution guidelines will be added soon.
